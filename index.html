@@ -210,12 +210,28 @@
             border-radius: 6px;
             padding: 5px;
             position: absolute;
-            z-index: 1;
+            z-index: 10;
             bottom: 125%;
             left: 50%;
             margin-left: -100px;
             opacity: 0;
             transition: opacity 0.3s;
+        }
+        
+        #error-message {
+            display: none;
+            color: white;
+            background-color: rgba(220, 53, 69, 0.9);
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            text-align: center;
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
         
         .tooltip:hover .tooltiptext {
@@ -279,6 +295,7 @@
                     <button id="copy-room">ルームIDをコピー</button>
                 </div>
                 
+                <div id="error-message"></div>
                 <p id="connection-status" class="status disconnected">未接続</p>
                 
                 <div id="connected-users" style="display: none;">
@@ -422,7 +439,7 @@
             
             // ルームID設定
             const roomIdInput = document.getElementById('room-id').value;
-            roomID = roomIdInput || 'room_' + Math.random().toString(36).substr(2, 9);
+            roomID = roomIdInput || 'room_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
             
             document.getElementById('current-room-id').textContent = roomID;
             document.getElementById('room-info').style.display = 'block';
@@ -432,23 +449,66 @@
                 peer.destroy();
             }
             
-            peer = new Peer(roomID, {
+            peer = new Peer(null, {
                 debug: 2
             });
             
             // 自分がホストの場合
             peer.on('open', (id) => {
                 console.log('My peer ID is: ' + id);
-                isHost = !roomIdInput; // 入力がなければホスト
                 
-                document.getElementById('connection-status').textContent = '接続済み (ホスト)';
-                document.getElementById('connection-status').className = 'status connected';
-                document.getElementById('chat-container').style.display = 'block';
-                document.getElementById('connected-users').style.display = 'block';
-                
-                // 動画をロード
-                if (player && videoIdInput) {
-                    player.loadVideoById(videoIdInput);
+                // 自動生成されたIDを使用
+                if (!roomIdInput) {
+                    roomID = id;
+                    document.getElementById('current-room-id').textContent = roomID;
+                    isHost = true;
+                    
+                    document.getElementById('connection-status').textContent = '接続済み (ホスト)';
+                    document.getElementById('connection-status').className = 'status connected';
+                    document.getElementById('chat-container').style.display = 'block';
+                    document.getElementById('connected-users').style.display = 'block';
+                    
+                    // 動画をロード
+                    if (player && videoIdInput) {
+                        player.loadVideoById(videoIdInput);
+                    }
+                } else {
+                    // ゲストの場合は指定されたルームIDに接続試行
+                    const conn = peer.connect(roomIdInput, {
+                        reliable: true
+                    });
+                    
+                    conn.on('open', () => {
+                        roomID = roomIdInput;
+                        document.getElementById('current-room-id').textContent = roomID;
+                        isHost = false;
+                        
+                        console.log('Connected to peer: ' + conn.peer);
+                        setupConnection(conn);
+                        
+                        document.getElementById('connection-status').textContent = '接続済み (ゲスト)';
+                        document.getElementById('connection-status').className = 'status connected';
+                        document.getElementById('chat-container').style.display = 'block';
+                        document.getElementById('connected-users').style.display = 'block';
+                        
+                        // ユーザー情報を送信
+                        conn.send({
+                            type: 'user-info',
+                            username: username
+                        });
+                        
+                        // 動画情報をリクエスト
+                        conn.send({
+                            type: 'request-video-info'
+                        });
+                    });
+                    
+                    conn.on('error', (err) => {
+                        console.error('Connection error:', err);
+                        alert('指定されたルームIDに接続できませんでした');
+                        document.getElementById('connection-status').textContent = '接続エラー: 指定されたルームが見つかりません';
+                        document.getElementById('connection-status').className = 'status disconnected';
+                    });
                 }
             });
             
@@ -460,61 +520,39 @@
             peer.on('error', (err) => {
                 console.error('PeerJS error:', err);
                 
-                if (err.type === 'peer-unavailable' && roomIdInput) {
-                    // 指定したルームが存在しない場合、新しいルームとして作成
-                    peer.destroy();
-                    peer = new Peer(roomID, {
-                        debug: 2
-                    });
-                    
-                    peer.on('open', (id) => {
-                        console.log('Created new room with ID: ' + id);
-                        isHost = true;
-                        
-                        document.getElementById('connection-status').textContent = '接続済み (ホスト - 新規作成)';
-                        document.getElementById('connection-status').className = 'status connected';
-                        document.getElementById('chat-container').style.display = 'block';
-                        document.getElementById('connected-users').style.display = 'block';
-                        
-                        // 動画をロード
-                        if (player && videoIdInput) {
-                            player.loadVideoById(videoIdInput);
-                        }
-                    });
-                } else {
-                    alert('接続エラー: ' + err);
-                    document.getElementById('connection-status').textContent = '接続エラー: ' + err.type;
-                    document.getElementById('connection-status').className = 'status disconnected';
+                // エラー表示
+                let errorMessage = err.type;
+                
+                switch(err.type) {
+                    case 'peer-unavailable':
+                        errorMessage = '指定されたルームが見つかりません';
+                        break;
+                    case 'network':
+                        errorMessage = 'ネットワークエラー';
+                        break;
+                    case 'server-error':
+                        errorMessage = 'サーバーエラー';
+                        break;
+                    case 'browser-incompatible':
+                        errorMessage = 'ブラウザがWebRTCに対応していません';
+                        break;
                 }
+                
+                // エラーメッセージを表示
+                const errorElement = document.getElementById('error-message');
+                errorElement.textContent = '接続エラー: ' + errorMessage;
+                errorElement.style.display = 'block';
+                
+                // 3秒後にエラーメッセージを非表示
+                setTimeout(() => {
+                    errorElement.style.display = 'none';
+                }, 5000);
+                
+                document.getElementById('connection-status').textContent = '接続エラー: ' + errorMessage;
+                document.getElementById('connection-status').className = 'status disconnected';
             });
             
-            // 自分がゲストの場合（指定されたルームIDに接続）
-            if (roomIdInput && roomIdInput !== peer.id) {
-                const conn = peer.connect(roomIdInput, {
-                    reliable: true
-                });
-                
-                conn.on('open', () => {
-                    console.log('Connected to peer: ' + conn.peer);
-                    setupConnection(conn);
-                    
-                    document.getElementById('connection-status').textContent = '接続済み (ゲスト)';
-                    document.getElementById('connection-status').className = 'status connected';
-                    document.getElementById('chat-container').style.display = 'block';
-                    document.getElementById('connected-users').style.display = 'block';
-                    
-                    // ユーザー情報を送信
-                    conn.send({
-                        type: 'user-info',
-                        username: username
-                    });
-                    
-                    // 動画情報をリクエスト
-                    conn.send({
-                        type: 'request-video-info'
-                    });
-                });
-            }
+            // ゲストの場合の接続はpeer.on('open')内で処理するように変更
         }
         
         function setupConnection(conn) {
