@@ -269,7 +269,11 @@
                 <h2>接続設定</h2>
                 
                 <div class="input-group">
-                    <label for="video-id">YouTube動画ID/URL:</label>
+                    <label for="video-id">YouTube動画ID/URL:
+                        <span class="tooltip">?
+                            <span class="tooltiptext">ルームを新規作成する場合は必須です。既存のルームに参加する場合は省略可能です。</span>
+                        </span>
+                    </label>
                     <input type="text" id="video-id" placeholder="例: dQw4w9WgXcQ または YouTube URL">
                 </div>
                 
@@ -429,7 +433,11 @@
         
         function createOrJoinRoom() {
             const videoIdInput = document.getElementById('video-id').value;
-            if (!videoIdInput) {
+            const roomIdInput = document.getElementById('room-id').value;
+            
+            // ホスト（新規ルーム作成）の場合は動画IDが必須
+            // ゲスト（既存ルーム参加）の場合は動画IDは任意（ホストから取得するため）
+            if (!videoIdInput && !roomIdInput) {
                 alert('YouTube動画IDまたはURLを入力してください');
                 return;
             }
