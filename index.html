@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>同時視聴 - YouTube同期プレーヤー</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.1/peerjs.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #f9f9f9;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: #ff0000;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            margin-bottom: 30px;
+            border-radius: 8px;
+        }
+        
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .description {
+            font-size: 16px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        @media (min-width: 768px) {
+            .main-content {
+                flex-direction: row;
+            }
+            
+            .video-container {
+                flex: 2;
+            }
+            
+            .controls {
+                flex: 1;
+            }
+        }
+        
+        .video-container {
+            background: #000;
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            height: 0;
+            overflow: hidden;
+            border-radius: 8px;
+        }
+        
+        #player {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        h2 {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #ff0000;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        button {
+            background: #ff0000;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #cc0000;
+        }
+        
+        .room-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 4px;
+        }
+        
+        .status {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        
+        .status.connected {
+            color: green;
+        }
+        
+        .status.disconnected {
+            color: red;
+        }
+        
+        #chat-container {
+            margin-top: 20px;
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        #chat-messages {
+            margin-bottom: 15px;
+        }
+        
+        .message {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            background: #f0f0f0;
+        }
+        
+        .message.self {
+            background: #e1f5fe;
+            text-align: right;
+        }
+        
+        .message-input {
+            display: flex;
+        }
+        
+        #message-text {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px 0 0 4px;
+            font-size: 16px;
+        }
+        
+        #send-message {
+            border-radius: 0 4px 4px 0;
+            margin-right: 0;
+        }
+        
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        .video-controls {
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>YouTube 同時視聴</h1>
+        </header>
+        
+        <p class="description">友達と一緒にYouTube動画を同時に見ることができます。同じルームIDを共有して、完全に同期した視聴を楽しみましょう。</p>
+        
+        <div class="main-content">
+            <div class="video-area">
+                <div class="video-container">
+                    <div id="player"></div>
+                </div>
+                
+                <div class="video-controls">
+                    <button id="play-btn">再生</button>
+                    <button id="pause-btn">一時停止</button>
+                    <button id="sync-btn">再同期</button>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <h2>接続設定</h2>
+                
+                <div class="input-group">
+                    <label for="video-id">YouTube動画ID/URL:</label>
+                    <input type="text" id="video-id" placeholder="例: dQw4w9WgXcQ または YouTube URL">
+                </div>
+                
+                <div class="input-group">
+                    <label for="room-id">ルームID: 
+                        <span class="tooltip">?
+                            <span class="tooltiptext">新しいルームを作成するには空白にしてください。既存のルームに参加するには、ルームIDを入力してください。</span>
+                        </span>
+                    </label>
+                    <input type="text" id="room-id" placeholder="空白で新規作成、または既存のIDを入力">
+                </div>
+                
+                <div class="input-group">
+                    <label for="username">ニックネーム:</label>
+                    <input type="text" id="username" placeholder="チャットに表示される名前">
+                </div>
+                
+                <button id="create-room">ルーム作成/参加</button>
+                
+                <div id="room-info" class="room-info" style="display: none;">
+                    <p>現在のルームID: <span id="current-room-id"></span></p>
+                    <p>このIDを友達に共有してください</p>
+                    <button id="copy-room">ルームIDをコピー</button>
+                </div>
+                
+                <p id="connection-status" class="status disconnected">未接続</p>
+                
+                <div id="connected-users" style="display: none;">
+                    <h3>接続中のユーザー:</h3>
+                    <ul id="user-list"></ul>
+                </div>
+            </div>
+        </div>
+        
+        <div id="chat-container" style="display: none;">
+            <h2>チャット</h2>
+            <div id="chat-messages"></div>
+            <div class="message-input">
+                <input type="text" id="message-text" placeholder="メッセージを入力...">
+                <button id="send-message">送信</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // YouTube API
+        let player;
+        let isHost = false;
+        let roomID = '';
+        let peer;
+        let connections = [];
+        let username = 'ゲスト' + Math.floor(Math.random() * 1000);
+        let isSyncingFromPeer = false;
+        
+        // YouTube API読み込み
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        
+        // YouTubeプレーヤー初期化
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '100%',
+                width: '100%',
+                videoId: '',
+                playerVars: {
+                    'playsinline': 1,
+                    'rel': 0,
+                    'modestbranding': 1
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+        
+        function onPlayerReady(event) {
+            console.log('YouTube Player ready');
+            document.getElementById('play-btn').addEventListener('click', () => {
+                player.playVideo();
+                if (connections.length > 0) {
+                    broadcastAction('play', player.getCurrentTime());
+                }
+            });
+            
+            document.getElementById('pause-btn').addEventListener('click', () => {
+                player.pauseVideo();
+                if (connections.length > 0) {
+                    broadcastAction('pause');
+                }
+            });
+            
+            document.getElementById('sync-btn').addEventListener('click', () => {
+                if (connections.length > 0) {
+                    broadcastAction('sync', player.getCurrentTime());
+                }
+            });
+        }
+        
+        function onPlayerStateChange(event) {
+            if (isSyncingFromPeer) return;
+            
+            if (event.data === YT.PlayerState.PLAYING) {
+                if (connections.length > 0) {
+                    broadcastAction('play', player.getCurrentTime());
+                }
+            } else if (event.data === YT.PlayerState.PAUSED) {
+                if (connections.length > 0) {
+                    broadcastAction('pause');
+                }
+            }
+        }
+        
+        // 初期化
+        document.addEventListener('DOMContentLoaded', () => {
+            // ユーザー名を設定
+            document.getElementById('username').value = username;
+            document.getElementById('username').addEventListener('change', (e) => {
+                username = e.target.value || username;
+            });
+            
+            // ルーム作成/参加ボタン
+            document.getElementById('create-room').addEventListener('click', createOrJoinRoom);
+            
+            // メッセージ送信
+            document.getElementById('send-message').addEventListener('click', sendChatMessage);
+            document.getElementById('message-text').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendChatMessage();
+                }
+            });
+            
+            // ルームIDコピー
+            document.getElementById('copy-room').addEventListener('click', () => {
+                const roomIdText = document.getElementById('current-room-id').textContent;
+                navigator.clipboard.writeText(roomIdText)
+                    .then(() => {
+                        alert('ルームIDがクリップボードにコピーされました');
+                    });
+            });
+            
+            // YouTube URLからIDを抽出する関数
+            function extractVideoID(url) {
+                const regExp = /^.*(youtu\.be\/|v\/|e\/|u\/\w+\/|embed\/|v=)([^#\&\?]*).*/;
+                const match = url.match(regExp);
+                return (match && match[2].length === 11) ? match[2] : url;
+            }
+            
+            // 入力されたURLまたはIDを処理
+            document.getElementById('video-id').addEventListener('blur', function() {
+                this.value = extractVideoID(this.value);
+            });
+        });
+        
+        function createOrJoinRoom() {
+            const videoIdInput = document.getElementById('video-id').value;
+            if (!videoIdInput) {
+                alert('YouTube動画IDまたはURLを入力してください');
+                return;
+            }
+            
+            // ユーザー名を更新
+            username = document.getElementById('username').value || username;
+            
+            // ルームID設定
+            const roomIdInput = document.getElementById('room-id').value;
+            roomID = roomIdInput || 'room_' + Math.random().toString(36).substr(2, 9);
+            
+            document.getElementById('current-room-id').textContent = roomID;
+            document.getElementById('room-info').style.display = 'block';
+            
+            // PeerJS初期化
+            if (peer) {
+                peer.destroy();
+            }
+            
+            peer = new Peer(roomID, {
+                debug: 2
+            });
+            
+            // 自分がホストの場合
+            peer.on('open', (id) => {
+                console.log('My peer ID is: ' + id);
+                isHost = !roomIdInput; // 入力がなければホスト
+                
+                document.getElementById('connection-status').textContent = '接続済み (ホスト)';
+                document.getElementById('connection-status').className = 'status connected';
+                document.getElementById('chat-container').style.display = 'block';
+                document.getElementById('connected-users').style.display = 'block';
+                
+                // 動画をロード
+                if (player && videoIdInput) {
+                    player.loadVideoById(videoIdInput);
+                }
+            });
+            
+            // 他のユーザーからの接続を処理
+            peer.on('connection', (conn) => {
+                setupConnection(conn);
+            });
+            
+            peer.on('error', (err) => {
+                console.error('PeerJS error:', err);
+                
+                if (err.type === 'peer-unavailable' && roomIdInput) {
+                    // 指定したルームが存在しない場合、新しいルームとして作成
+                    peer.destroy();
+                    peer = new Peer(roomID, {
+                        debug: 2
+                    });
+                    
+                    peer.on('open', (id) => {
+                        console.log('Created new room with ID: ' + id);
+                        isHost = true;
+                        
+                        document.getElementById('connection-status').textContent = '接続済み (ホスト - 新規作成)';
+                        document.getElementById('connection-status').className = 'status connected';
+                        document.getElementById('chat-container').style.display = 'block';
+                        document.getElementById('connected-users').style.display = 'block';
+                        
+                        // 動画をロード
+                        if (player && videoIdInput) {
+                            player.loadVideoById(videoIdInput);
+                        }
+                    });
+                } else {
+                    alert('接続エラー: ' + err);
+                    document.getElementById('connection-status').textContent = '接続エラー: ' + err.type;
+                    document.getElementById('connection-status').className = 'status disconnected';
+                }
+            });
+            
+            // 自分がゲストの場合（指定されたルームIDに接続）
+            if (roomIdInput && roomIdInput !== peer.id) {
+                const conn = peer.connect(roomIdInput, {
+                    reliable: true
+                });
+                
+                conn.on('open', () => {
+                    console.log('Connected to peer: ' + conn.peer);
+                    setupConnection(conn);
+                    
+                    document.getElementById('connection-status').textContent = '接続済み (ゲスト)';
+                    document.getElementById('connection-status').className = 'status connected';
+                    document.getElementById('chat-container').style.display = 'block';
+                    document.getElementById('connected-users').style.display = 'block';
+                    
+                    // ユーザー情報を送信
+                    conn.send({
+                        type: 'user-info',
+                        username: username
+                    });
+                    
+                    // 動画情報をリクエスト
+                    conn.send({
+                        type: 'request-video-info'
+                    });
+                });
+            }
+        }
+        
+        function setupConnection(conn) {
+            connections.push(conn);
+            updateUserList();
+            
+            conn.on('data', (data) => {
+                handlePeerMessage(conn, data);
+            });
+            
+            conn.on('close', () => {
+                console.log('Connection closed');
+                connections = connections.filter(c => c.peer !== conn.peer);
+                updateUserList();
+                addChatMessage('システム', `ユーザーが切断しました`);
+            });
+        }
+        
+        function handlePeerMessage(conn, data) {
+            console.log('Received data:', data);
+            
+            switch (data.type) {
+                case 'play':
+                    isSyncingFromPeer = true;
+                    if (Math.abs(player.getCurrentTime() - data.time) > 1) {
+                        player.seekTo(data.time);
+                    }
+                    player.playVideo();
+                    setTimeout(() => { isSyncingFromPeer = false; }, 500);
+                    break;
+                    
+                case 'pause':
+                    isSyncingFromPeer = true;
+                    player.pauseVideo();
+                    setTimeout(() => { isSyncingFromPeer = false; }, 500);
+                    break;
+                    
+                case 'sync':
+                    isSyncingFromPeer = true;
+                    player.seekTo(data.time);
+                    setTimeout(() => { isSyncingFromPeer = false; }, 500);
+                    break;
+                    
+                case 'chat':
+                    addChatMessage(data.username, data.message);
+                    break;
+                    
+                case 'user-info':
+                    conn.username = data.username;
+                    updateUserList();
+                    addChatMessage('システム', `${data.username} が参加しました`);
+                    break;
+                    
+                case 'request-video-info':
+                    if (isHost && player) {
+                        conn.send({
+                            type: 'video-info',
+                            videoId: player.getVideoData().video_id,
+                            currentTime: player.getCurrentTime(),
+                            isPlaying: player.getPlayerState() === YT.PlayerState.PLAYING
+                        });
+                    }
+                    break;
+                    
+                case 'video-info':
+                    if (player) {
+                        player.loadVideoById(data.videoId, data.currentTime);
+                        if (!data.isPlaying) {
+                            setTimeout(() => {
+                                player.pauseVideo();
+                            }, 1000);
+                        }
+                    }
+                    break;
+            }
+        }
+        
+        function broadcastAction(actionType, time) {
+            const message = {
+                type: actionType
+            };
+            
+            if (time !== undefined) {
+                message.time = time;
+            }
+            
+            connections.forEach(conn => {
+                conn.send(message);
+            });
+        }
+        
+        function sendChatMessage() {
+            const messageInput = document.getElementById('message-text');
+            const message = messageInput.value.trim();
+            
+            if (message) {
+                addChatMessage(username, message, true);
+                
+                connections.forEach(conn => {
+                    conn.send({
+                        type: 'chat',
+                        username: username,
+                        message: message
+                    });
+                });
+                
+                messageInput.value = '';
+            }
+        }
+        
+        function addChatMessage(user, message, isSelf = false) {
+            const chatMessages = document.getElementById('chat-messages');
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message' + (isSelf ? ' self' : '');
+            messageElement.innerHTML = `<strong>${user}:</strong> ${message}`;
+            chatMessages.appendChild(messageElement);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        function updateUserList() {
+            const userList = document.getElementById('user-list');
+            userList.innerHTML = '';
+            
+            // 自分を追加
+            const selfItem = document.createElement('li');
+            selfItem.textContent = `${username} (あなた)`;
+            userList.appendChild(selfItem);
+            
+            // 接続中のユーザーを追加
+            connections.forEach(conn => {
+                const userItem = document.createElement('li');
+                userItem.textContent = conn.username || 'ゲスト';
+                userList.appendChild(userItem);
+            });
+        }
+    </script>
+</body>
+</html>
