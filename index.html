@@ -392,8 +392,14 @@
         
         // ルーム作成または参加
         function createOrJoinRoom() {
-            const videoIdInput = document.getElementById('video-id').value;
-            const roomIdInput = document.getElementById('room-id').value;
+            let videoIdInput = document.getElementById('video-id').value.trim();
+            const roomIdInput = document.getElementById('room-id').value.trim();
+            
+            // YouTube URLからIDを抽出
+            if (videoIdInput) {
+                videoIdInput = extractVideoID(videoIdInput);
+                console.log("Extracted video ID:", videoIdInput);
+            }
             
             // ホスト（新規ルーム作成）の場合は動画IDが必須
             // ゲスト（既存ルーム参加）の場合は動画IDは任意（ホストから取得するため）
@@ -441,7 +447,19 @@
                     
                     // 動画をロード
                     if (player && videoIdInput) {
+                        console.log("Loading video with ID:", videoIdInput);
                         player.loadVideoById(videoIdInput);
+                        
+                        // 動画読み込みエラーをチェック
+                        setTimeout(() => {
+                            // 動画のステータスが未開始(-1)より大きければ成功
+                            if (player.getPlayerState() > -1) {
+                                console.log("Video loaded successfully");
+                            } else {
+                                console.error("Failed to load video");
+                                showError("動画の読み込みに失敗しました。正しいYouTube IDまたはURLを入力してください。");
+                            }
+                        }, 2000);
                     }
                 } 
                 // 既存ルーム参加の場合（ゲスト）
@@ -695,13 +713,89 @@
             
             // YouTube URLからIDを抽出する関数
             const extractVideoID = (url) => {
-                const regExp = /^.*(youtu\.be\/|v\/|e\/|u\/\w+\/|embed\/|v=)([^#\&\?]*).*/;
-                const match = url.match(regExp);
-                return (match && match[2].length === 11) ? match[2] : url;
+                // URLかIDかを判断
+                if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                    // URLの場合
+                    let videoID = '';
+                    
+                    try {
+                        if (url.includes('youtube.com/watch')) {
+                            // 通常のYouTube URL (例: https://www.youtube.com/watch?v=dQw4w9WgXcQ)
+                            const urlObj = new URL(url);
+                            videoID = urlObj.searchParams.get('v');
+                        } else if (url.includes('youtu.be')) {
+                            // 短縮URL (例: https://youtu.be/dQw4w9WgXcQ)
+                            const parts = url.split('/');
+                            videoID = parts[parts.length - 1];
+                        } else if (url.includes('youtube.com/embed')) {
+                            // 埋め込みURL (例: https://www.youtube.com/embed/dQw4w9WgXcQ)
+                            const parts = url.split('/');
+                            videoID = parts[parts.length - 1];
+                        }
+                        
+                        // URLパラメータがある場合は削除
+                        if (videoID && videoID.includes('?')) {
+                            videoID = videoID.split('?')[0];
+                        }
+                        
+                        console.log("Extracted video ID:", videoID);
+                        return videoID || url;
+                    } catch (e) {
+                        console.error("Error extracting video ID:", e);
+                        return url; // エラーが発生した場合は元の値を返す
+                    }
+                } else {
+                    // IDと判断
+                    return url;
+                }
             };
             
-            // 入力されたURLまたはIDを処理
+            // 入力されたURLまたはIDを処理（フォーカスが外れた時）
             document.getElementById('video-id').addEventListener('blur', function() {
-                this.value = extractVideoID(this.value);
+                const originalValue = this.value.trim();
+                if (originalValue) {
+                    const videoId = extractVideoID(originalValue);
+                    console.log(`処理前: ${originalValue}, 処理後: ${videoId}`);
+                    if (videoId !== originalValue) {
+                        this.value = videoId;
+                    }
+                }
             });
+            
+            // デバッグ情報表示
+            const debugInfo = document.createElement('div');
+            debugInfo.style.display = 'none';
+            debugInfo.id = 'debug-info';
+            debugInfo.style.marginTop = '20px';
+            debugInfo.style.padding = '10px';
+            debugInfo.style.backgroundColor = '#f0f0f0';
+            debugInfo.style.borderRadius = '4px';
+            debugInfo.style.fontSize = '12px';
+            debugInfo.style.fontFamily = 'monospace';
+            debugInfo.innerHTML = '<h3>デバッグ情報</h3><pre id="debug-log"></pre>';
+            document.querySelector('.controls').appendChild(debugInfo);
+            
+            // デバッグログ関数
+            window.debugLog = function(message) {
+                console.log(message);
+                const debugLog = document.getElementById('debug-log');
+                if (debugLog) {
+                    const now = new Date();
+                    const timestamp = `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}`;
+                    debugLog.innerHTML += `[${timestamp}] ${message}\n`;
+                    debugLog.scrollTop = debugLog.scrollHeight;
+                }
+            };
+            
+            // デバッグモード切替
+            document.addEventListener('keydown', function(e) {
+                // Ctrl+Shift+D でデバッグモード切替
+                if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+                    const debugInfo = document.getElementById('debug-info');
+                    if (debugInfo) {
+                        debugInfo.style.display = debugInfo.style.display === 'none' ? 'block' : 'none';
+                    }
+                }
+            });
+        });
         });
