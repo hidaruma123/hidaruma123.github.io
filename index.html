@@ -210,28 +210,12 @@
             border-radius: 6px;
             padding: 5px;
             position: absolute;
-            z-index: 10;
+            z-index: 1;
             bottom: 125%;
             left: 50%;
             margin-left: -100px;
             opacity: 0;
             transition: opacity 0.3s;
-        }
-        
-        #error-message {
-            display: none;
-            color: white;
-            background-color: rgba(220, 53, 69, 0.9);
-            padding: 10px 15px;
-            border-radius: 4px;
-            margin: 10px 0;
-            text-align: center;
-            animation: fadeIn 0.3s;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
         }
         
         .tooltip:hover .tooltiptext {
@@ -241,6 +225,37 @@
         
         .video-controls {
             margin-top: 15px;
+        }
+        
+        .tab-container {
+            display: flex;
+            margin-bottom: 15px;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            background: #eee;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            border-radius: 4px 4px 0 0;
+            margin-right: 5px;
+        }
+        
+        .tab.active {
+            background: white;
+            border-bottom: 1px solid white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        #join-room-tab {
+            margin-bottom: 20px;
         }
     </style>
 </head>
@@ -266,32 +281,42 @@
             </div>
             
             <div class="controls">
-                <h2>接続設定</h2>
-                
-                <div class="input-group">
-                    <label for="video-id">YouTube動画ID/URL:
-                        <span class="tooltip">?
-                            <span class="tooltiptext">ルームを新規作成する場合は必須です。既存のルームに参加する場合は省略可能です。</span>
-                        </span>
-                    </label>
-                    <input type="text" id="video-id" placeholder="例: dQw4w9WgXcQ または YouTube URL">
+                <div class="tab-container">
+                    <div class="tab active" id="create-tab">ルームを作成</div>
+                    <div class="tab" id="join-tab">ルームに参加</div>
                 </div>
                 
-                <div class="input-group">
-                    <label for="room-id">ルームID: 
-                        <span class="tooltip">?
-                            <span class="tooltiptext">新しいルームを作成するには空白にしてください。既存のルームに参加するには、ルームIDを入力してください。</span>
-                        </span>
-                    </label>
-                    <input type="text" id="room-id" placeholder="空白で新規作成、または既存のIDを入力">
+                <div class="tab-content active" id="create-room-tab">
+                    <h2>新しいルームを作成</h2>
+                    
+                    <div class="input-group">
+                        <label for="create-video-id">YouTube動画ID/URL:</label>
+                        <input type="text" id="create-video-id" placeholder="例: dQw4w9WgXcQ または YouTube URL">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="create-username">ニックネーム:</label>
+                        <input type="text" id="create-username" placeholder="チャットに表示される名前">
+                    </div>
+                    
+                    <button id="create-room-btn">ルーム作成</button>
                 </div>
                 
-                <div class="input-group">
-                    <label for="username">ニックネーム:</label>
-                    <input type="text" id="username" placeholder="チャットに表示される名前">
+                <div class="tab-content" id="join-room-tab">
+                    <h2>既存のルームに参加</h2>
+                    
+                    <div class="input-group">
+                        <label for="join-room-id">ルームID:</label>
+                        <input type="text" id="join-room-id" placeholder="ルームIDを入力">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="join-username">ニックネーム:</label>
+                        <input type="text" id="join-username" placeholder="チャットに表示される名前">
+                    </div>
+                    
+                    <button id="join-room-btn">ルームに参加</button>
                 </div>
-                
-                <button id="create-room">ルーム作成/参加</button>
                 
                 <div id="room-info" class="room-info" style="display: none;">
                     <p>現在のルームID: <span id="current-room-id"></span></p>
@@ -299,7 +324,6 @@
                     <button id="copy-room">ルームIDをコピー</button>
                 </div>
                 
-                <div id="error-message"></div>
                 <p id="connection-status" class="status disconnected">未接続</p>
                 
                 <div id="connected-users" style="display: none;">
@@ -390,35 +414,86 @@
             }
         }
         
-        // ルーム作成または参加
-        function createOrJoinRoom() {
-            let videoIdInput = document.getElementById('video-id').value.trim();
-            const roomIdInput = document.getElementById('room-id').value.trim();
+        // 初期化
+        document.addEventListener('DOMContentLoaded', () => {
+            // ユーザー名設定
+            document.getElementById('create-username').value = username;
+            document.getElementById('join-username').value = username;
             
-            // YouTube URLからIDを抽出
-            if (videoIdInput) {
-                videoIdInput = extractVideoID(videoIdInput);
-                console.log("Extracted video ID:", videoIdInput);
+            // タブ切り替え
+            document.getElementById('create-tab').addEventListener('click', () => {
+                document.getElementById('create-tab').classList.add('active');
+                document.getElementById('join-tab').classList.remove('active');
+                document.getElementById('create-room-tab').classList.add('active');
+                document.getElementById('join-room-tab').classList.remove('active');
+            });
+            
+            document.getElementById('join-tab').addEventListener('click', () => {
+                document.getElementById('join-tab').classList.add('active');
+                document.getElementById('create-tab').classList.remove('active');
+                document.getElementById('join-room-tab').classList.add('active');
+                document.getElementById('create-room-tab').classList.remove('active');
+            });
+            
+            // ユーザー名を更新
+            document.getElementById('create-username').addEventListener('change', (e) => {
+                username = e.target.value || username;
+                document.getElementById('join-username').value = username;
+            });
+            
+            document.getElementById('join-username').addEventListener('change', (e) => {
+                username = e.target.value || username;
+                document.getElementById('create-username').value = username;
+            });
+            
+            // ルーム作成ボタン
+            document.getElementById('create-room-btn').addEventListener('click', createRoom);
+            
+            // ルーム参加ボタン
+            document.getElementById('join-room-btn').addEventListener('click', joinRoom);
+            
+            // メッセージ送信
+            document.getElementById('send-message').addEventListener('click', sendChatMessage);
+            document.getElementById('message-text').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendChatMessage();
+                }
+            });
+            
+            // ルームIDコピー
+            document.getElementById('copy-room').addEventListener('click', () => {
+                const roomIdText = document.getElementById('current-room-id').textContent;
+                navigator.clipboard.writeText(roomIdText)
+                    .then(() => {
+                        alert('ルームIDがクリップボードにコピーされました');
+                    });
+            });
+            
+            // YouTube URLからIDを抽出する関数
+            function extractVideoID(url) {
+                const regExp = /^.*(youtu\.be\/|v\/|e\/|u\/\w+\/|embed\/|v=)([^#\&\?]*).*/;
+                const match = url.match(regExp);
+                return (match && match[2].length === 11) ? match[2] : url;
             }
             
-            // ホスト（新規ルーム作成）の場合は動画IDが必須
-            // ゲスト（既存ルーム参加）の場合は動画IDは任意（ホストから取得するため）
-            if (!videoIdInput && !roomIdInput) {
+            // 入力されたURLまたはIDを処理
+            document.getElementById('create-video-id').addEventListener('blur', function() {
+                this.value = extractVideoID(this.value);
+            });
+        });
+        
+        function createRoom() {
+            const videoIdInput = document.getElementById('create-video-id').value;
+            if (!videoIdInput) {
                 alert('YouTube動画IDまたはURLを入力してください');
                 return;
             }
             
             // ユーザー名を更新
-            username = document.getElementById('username').value || username;
+            username = document.getElementById('create-username').value || username;
             
-            // ルームID設定
-            if (!roomIdInput) {
-                // 新規ルーム作成の場合はランダムIDを生成
-                roomID = 'room_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
-            } else {
-                // 既存ルーム参加の場合は入力されたIDを使用
-                roomID = roomIdInput;
-            }
+            // ルームID生成
+            roomID = 'room_' + Math.random().toString(36).substr(2, 9);
             
             document.getElementById('current-room-id').textContent = roomID;
             document.getElementById('room-info').style.display = 'block';
@@ -428,122 +503,113 @@
                 peer.destroy();
             }
             
-            // ランダムIDでピア初期化（IDの競合を避けるため）
-            peer = new Peer(null, {
+            peer = new Peer(roomID, {
                 debug: 2
             });
             
-            // ピア接続オープン時の処理
             peer.on('open', (id) => {
                 console.log('My peer ID is: ' + id);
+                isHost = true;
                 
-                // 新規ルーム作成の場合（ホスト）
-                if (!roomIdInput) {
-                    isHost = true;
-                    document.getElementById('connection-status').textContent = '接続済み (ホスト)';
-                    document.getElementById('connection-status').className = 'status connected';
-                    document.getElementById('chat-container').style.display = 'block';
-                    document.getElementById('connected-users').style.display = 'block';
-                    
-                    // 動画をロード
-                    if (player && videoIdInput) {
-                        console.log("Loading video with ID:", videoIdInput);
-                        player.loadVideoById(videoIdInput);
-                        
-                        // 動画読み込みエラーをチェック
-                        setTimeout(() => {
-                            // 動画のステータスが未開始(-1)より大きければ成功
-                            if (player.getPlayerState() > -1) {
-                                console.log("Video loaded successfully");
-                            } else {
-                                console.error("Failed to load video");
-                                showError("動画の読み込みに失敗しました。正しいYouTube IDまたはURLを入力してください。");
-                            }
-                        }, 2000);
-                    }
-                } 
-                // 既存ルーム参加の場合（ゲスト）
-                else {
-                    const connection = peer.connect(roomIdInput, {
-                        reliable: true
-                    });
-                    
-                    connection.on('open', () => {
-                        console.log('Connected to peer: ' + connection.peer);
-                        setupConnection(connection);
-                        
-                        document.getElementById('connection-status').textContent = '接続済み (ゲスト)';
-                        document.getElementById('connection-status').className = 'status connected';
-                        document.getElementById('chat-container').style.display = 'block';
-                        document.getElementById('connected-users').style.display = 'block';
-                        
-                        // ユーザー情報を送信
-                        connection.send({
-                            type: 'user-info',
-                            username: username
-                        });
-                        
-                        // 動画情報をリクエスト
-                        connection.send({
-                            type: 'request-video-info'
-                        });
-                    });
-                    
-                    connection.on('error', (err) => {
-                        console.error('Connection error:', err);
-                        showError('指定されたルームに接続できませんでした');
-                    });
+                document.getElementById('connection-status').textContent = '接続済み (ホスト)';
+                document.getElementById('connection-status').className = 'status connected';
+                document.getElementById('chat-container').style.display = 'block';
+                document.getElementById('connected-users').style.display = 'block';
+                
+                // 動画をロード
+                if (player && videoIdInput) {
+                    player.loadVideoById(videoIdInput);
                 }
             });
             
-            // 他のユーザーからの接続を処理（ホストの場合）
+            // 他のユーザーからの接続を処理
             peer.on('connection', (conn) => {
                 setupConnection(conn);
             });
             
-            // エラー処理
             peer.on('error', (err) => {
                 console.error('PeerJS error:', err);
-                
-                // エラー表示
-                let errorMessage = err.type;
-                
-                switch(err.type) {
-                    case 'peer-unavailable':
-                        errorMessage = '指定されたルームが見つかりません';
-                        break;
-                    case 'network':
-                        errorMessage = 'ネットワークエラー';
-                        break;
-                    case 'server-error':
-                        errorMessage = 'サーバーエラー';
-                        break;
-                    case 'browser-incompatible':
-                        errorMessage = 'ブラウザがWebRTCに対応していません';
-                        break;
-                }
-                
-                showError(errorMessage);
+                alert('接続エラー: ' + err);
+                document.getElementById('connection-status').textContent = '接続エラー: ' + err.type;
+                document.getElementById('connection-status').className = 'status disconnected';
             });
         }
         
-        // エラーメッセージを表示
-        function showError(message) {
-            const errorElement = document.getElementById('error-message');
-            errorElement.textContent = '接続エラー: ' + message;
-            errorElement.style.display = 'block';
+        function joinRoom() {
+            const roomIdInput = document.getElementById('join-room-id').value;
+            if (!roomIdInput) {
+                alert('ルームIDを入力してください');
+                return;
+            }
             
-            // 状態表示も更新
-            document.getElementById('connection-status').textContent = '接続エラー: ' + message;
-            document.getElementById('connection-status').className = 'status disconnected';
+            // ユーザー名を更新
+            username = document.getElementById('join-username').value || username;
             
-            // 5秒後にエラーメッセージを非表示
-            setTimeout(() => {
-                errorElement.style.display = 'none';
-            }, 5000);
+            // PeerJS初期化
+            if (peer) {
+                peer.destroy();
+            }
+            
+            // ランダムIDで自分のピアを作成
+            const myPeerId = 'guest_' + Math.random().toString(36).substr(2, 9);
+            peer = new Peer(myPeerId, {
+                debug: 2
+            });
+            
+            peer.on('open', (id) => {
+                console.log('My peer ID is: ' + id);
+                
+                // ホストに接続
+                const conn = peer.connect(roomIdInput, {
+                    reliable: true
+                });
+                
+                conn.on('open', () => {
+                    console.log('Connected to host: ' + conn.peer);
+                    setupConnection(conn);
+                    roomID = roomIdInput;
+                    
+                    document.getElementById('current-room-id').textContent = roomID;
+                    document.getElementById('room-info').style.display = 'block';
+                    document.getElementById('connection-status').textContent = '接続済み (ゲスト)';
+                    document.getElementById('connection-status').className = 'status connected';
+                    document.getElementById('chat-container').style.display = 'block';
+                    document.getElementById('connected-users').style.display = 'block';
+                    
+                    // ユーザー情報を送信
+                    conn.send({
+                        type: 'user-info',
+                        username: username
+                    });
+                    
+                    // 動画情報をリクエスト
+                    conn.send({
+                        type: 'request-video-info'
+                    });
+                });
+                
+                conn.on('error', (err) => {
+                    console.error('Connection error:', err);
+                    alert('接続エラー: 指定されたルームが見つかりません');
+                    document.getElementById('connection-status').textContent = '接続エラー: ルームが見つかりません';
+                    document.getElementById('connection-status').className = 'status disconnected';
+                });
+            });
+            
+            peer.on('error', (err) => {
+                console.error('PeerJS error:', err);
+                
+                if (err.type === 'peer-unavailable') {
+                    alert('エラー: 指定されたルームが見つかりません');
+                    document.getElementById('connection-status').textContent = '接続エラー: ルームが見つかりません';
+                } else {
+                    alert('接続エラー: ' + err);
+                    document.getElementById('connection-status').textContent = '接続エラー: ' + err.type;
+                }
+                document.getElementById('connection-status').className = 'status disconnected';
+            });
         }
         
-        // 接続セットアップ
         function setupConnection(conn) {
             connections.push(conn);
             updateUserList();
@@ -560,7 +626,6 @@
             });
         }
         
-        // ピアからのメッセージ処理
         function handlePeerMessage(conn, data) {
             console.log('Received data:', data);
             
@@ -620,7 +685,6 @@
             }
         }
         
-        // 全接続に動作をブロードキャスト
         function broadcastAction(actionType, time) {
             const message = {
                 type: actionType
@@ -635,7 +699,6 @@
             });
         }
         
-        // チャットメッセージ送信
         function sendChatMessage() {
             const messageInput = document.getElementById('message-text');
             const message = messageInput.value.trim();
@@ -655,7 +718,6 @@
             }
         }
         
-        // チャットメッセージ追加
         function addChatMessage(user, message, isSelf = false) {
             const chatMessages = document.getElementById('chat-messages');
             const messageElement = document.createElement('div');
@@ -665,7 +727,6 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
         
-        // 接続ユーザーリスト更新
         function updateUserList() {
             const userList = document.getElementById('user-list');
             userList.innerHTML = '';
@@ -682,120 +743,6 @@
                 userList.appendChild(userItem);
             });
         }
-        
-        // 初期化
-        document.addEventListener('DOMContentLoaded', () => {
-            // ユーザー名を設定
-            document.getElementById('username').value = username;
-            document.getElementById('username').addEventListener('change', (e) => {
-                username = e.target.value || username;
-            });
-            
-            // ルーム作成/参加ボタン
-            document.getElementById('create-room').addEventListener('click', createOrJoinRoom);
-            
-            // メッセージ送信
-            document.getElementById('send-message').addEventListener('click', sendChatMessage);
-            document.getElementById('message-text').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    sendChatMessage();
-                }
-            });
-            
-            // ルームIDコピー
-            document.getElementById('copy-room').addEventListener('click', () => {
-                const roomIdText = document.getElementById('current-room-id').textContent;
-                navigator.clipboard.writeText(roomIdText)
-                    .then(() => {
-                        alert('ルームIDがクリップボードにコピーされました');
-                    });
-            });
-            
-            // YouTube URLからIDを抽出する関数
-            const extractVideoID = (url) => {
-                // URLかIDかを判断
-                if (url.includes('youtube.com') || url.includes('youtu.be')) {
-                    // URLの場合
-                    let videoID = '';
-                    
-                    try {
-                        if (url.includes('youtube.com/watch')) {
-                            // 通常のYouTube URL (例: https://www.youtube.com/watch?v=dQw4w9WgXcQ)
-                            const urlObj = new URL(url);
-                            videoID = urlObj.searchParams.get('v');
-                        } else if (url.includes('youtu.be')) {
-                            // 短縮URL (例: https://youtu.be/dQw4w9WgXcQ)
-                            const parts = url.split('/');
-                            videoID = parts[parts.length - 1];
-                        } else if (url.includes('youtube.com/embed')) {
-                            // 埋め込みURL (例: https://www.youtube.com/embed/dQw4w9WgXcQ)
-                            const parts = url.split('/');
-                            videoID = parts[parts.length - 1];
-                        }
-                        
-                        // URLパラメータがある場合は削除
-                        if (videoID && videoID.includes('?')) {
-                            videoID = videoID.split('?')[0];
-                        }
-                        
-                        console.log("Extracted video ID:", videoID);
-                        return videoID || url;
-                    } catch (e) {
-                        console.error("Error extracting video ID:", e);
-                        return url; // エラーが発生した場合は元の値を返す
-                    }
-                } else {
-                    // IDと判断
-                    return url;
-                }
-            };
-            
-            // 入力されたURLまたはIDを処理（フォーカスが外れた時）
-            document.getElementById('video-id').addEventListener('blur', function() {
-                const originalValue = this.value.trim();
-                if (originalValue) {
-                    const videoId = extractVideoID(originalValue);
-                    console.log(`処理前: ${originalValue}, 処理後: ${videoId}`);
-                    if (videoId !== originalValue) {
-                        this.value = videoId;
-                    }
-                }
-            });
-            
-            // デバッグ情報表示
-            const debugInfo = document.createElement('div');
-            debugInfo.style.display = 'none';
-            debugInfo.id = 'debug-info';
-            debugInfo.style.marginTop = '20px';
-            debugInfo.style.padding = '10px';
-            debugInfo.style.backgroundColor = '#f0f0f0';
-            debugInfo.style.borderRadius = '4px';
-            debugInfo.style.fontSize = '12px';
-            debugInfo.style.fontFamily = 'monospace';
-            debugInfo.innerHTML = '<h3>デバッグ情報</h3><pre id="debug-log"></pre>';
-            document.querySelector('.controls').appendChild(debugInfo);
-            
-            // デバッグログ関数
-            window.debugLog = function(message) {
-                console.log(message);
-                const debugLog = document.getElementById('debug-log');
-                if (debugLog) {
-                    const now = new Date();
-                    const timestamp = `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}`;
-                    debugLog.innerHTML += `[${timestamp}] ${message}\n`;
-                    debugLog.scrollTop = debugLog.scrollHeight;
-                }
-            };
-            
-            // デバッグモード切替
-            document.addEventListener('keydown', function(e) {
-                // Ctrl+Shift+D でデバッグモード切替
-                if (e.ctrlKey && e.shiftKey && e.key === 'D') {
-                    const debugInfo = document.getElementById('debug-info');
-                    if (debugInfo) {
-                        debugInfo.style.display = debugInfo.style.display === 'none' ? 'block' : 'none';
-                    }
-                }
-            });
-        });
-        });
+    </script>
+</body>
+</html>
