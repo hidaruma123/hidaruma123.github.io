@@ -3,746 +3,391 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>同時視聴 - YouTube同期プレーヤー</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.1/peerjs.min.js"></script>
+    <title>コードメモ帳 - Code Notepad (MEL対応)</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/lib/codemirror.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/theme/monokai.css">
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/lib/codemirror.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/mode/javascript/javascript.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/mode/python/python.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/mode/xml/xml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/mode/css/css.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/mode/clike/clike.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/addon/edit/closebrackets.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/addon/edit/matchbrackets.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/addon/selection/active-line.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-        }
-        
-        body {
-            background-color: #f9f9f9;
-            color: #333;
-            line-height: 1.6;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        header {
-            background-color: #ff0000;
-            color: white;
-            padding: 20px 0;
-            text-align: center;
-            margin-bottom: 30px;
-            border-radius: 8px;
-        }
-        
-        h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
-        
-        .description {
-            font-size: 16px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        
-        .main-content {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        
-        @media (min-width: 768px) {
-            .main-content {
-                flex-direction: row;
-            }
-            
-            .video-container {
-                flex: 2;
-            }
-            
-            .controls {
-                flex: 1;
-            }
-        }
-        
-        .video-container {
-            background: #000;
-            position: relative;
-            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
-            height: 0;
-            overflow: hidden;
-            border-radius: 8px;
-        }
-        
-        #player {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
+        .CodeMirror {
             height: 100%;
-        }
-        
-        .controls {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        
-        h2 {
-            font-size: 20px;
-            margin-bottom: 15px;
-            color: #ff0000;
-        }
-        
-        .input-group {
-            margin-bottom: 15px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        
-        input[type="text"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-        
-        button {
-            background: #ff0000;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-right: 10px;
-            margin-bottom: 10px;
-            transition: background 0.3s;
-        }
-        
-        button:hover {
-            background: #cc0000;
-        }
-        
-        .room-info {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f0f0f0;
-            border-radius: 4px;
-        }
-        
-        .status {
-            margin-top: 20px;
-            font-weight: bold;
-        }
-        
-        .status.connected {
-            color: green;
-        }
-        
-        .status.disconnected {
-            color: red;
-        }
-        
-        #chat-container {
-            margin-top: 20px;
-            background: white;
-            border-radius: 8px;
-            padding: 15px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        
-        #chat-messages {
-            margin-bottom: 15px;
-        }
-        
-        .message {
-            margin-bottom: 10px;
-            padding: 8px 12px;
-            border-radius: 4px;
-            background: #f0f0f0;
-        }
-        
-        .message.self {
-            background: #e1f5fe;
-            text-align: right;
-        }
-        
-        .message-input {
-            display: flex;
-        }
-        
-        #message-text {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px 0 0 4px;
-            font-size: 16px;
-        }
-        
-        #send-message {
-            border-radius: 0 4px 4px 0;
-            margin-right: 0;
-        }
-        
-        .tooltip {
-            position: relative;
-            display: inline-block;
-            cursor: pointer;
-            margin-left: 5px;
-        }
-        
-        .tooltip .tooltiptext {
-            visibility: hidden;
-            width: 200px;
-            background-color: #555;
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 5px;
-            position: absolute;
-            z-index: 1;
-            bottom: 125%;
-            left: 50%;
-            margin-left: -100px;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        
-        .tooltip:hover .tooltiptext {
-            visibility: visible;
-            opacity: 1;
-        }
-        
-        .video-controls {
-            margin-top: 15px;
-        }
-        
-        .tab-container {
-            display: flex;
-            margin-bottom: 15px;
-        }
-        
-        .tab {
-            padding: 10px 20px;
-            background: #eee;
-            border: 1px solid #ddd;
-            cursor: pointer;
-            border-radius: 4px 4px 0 0;
-            margin-right: 5px;
-        }
-        
-        .tab.active {
-            background: white;
-            border-bottom: 1px solid white;
-        }
-        
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        #join-room-tab {
-            margin-bottom: 20px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <header>
-            <h1>YouTube 同時視聴</h1>
-        </header>
-        
-        <p class="description">友達と一緒にYouTube動画を同時に見ることができます。同じルームIDを共有して、完全に同期した視聴を楽しみましょう。</p>
-        
-        <div class="main-content">
-            <div class="video-area">
-                <div class="video-container">
-                    <div id="player"></div>
+<body class="bg-gray-900 text-white min-h-screen">
+    <div class="container mx-auto px-4 py-6">
+        <!-- Header -->
+        <div class="mb-6">
+            <h1 class="text-3xl font-bold text-center mb-2">
+                <i class="fas fa-code mr-2"></i>
+                コードメモ帳
+            </h1>
+            <p class="text-gray-400 text-center">Maya MEL対応オンラインコードエディタ</p>
+        </div>
+
+        <!-- Controls -->
+        <div class="bg-gray-800 rounded-lg p-4 mb-4">
+            <div class="flex flex-wrap items-center gap-4 mb-4">
+                <!-- Language Selection -->
+                <div class="flex items-center space-x-2">
+                    <label class="text-sm font-medium">言語:</label>
+                    <select id="languageSelect" class="bg-gray-700 border border-gray-600 rounded px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="mel">Maya MEL</option>
+                        <option value="python">Python</option>
+                        <option value="javascript">JavaScript</option>
+                        <option value="html">HTML</option>
+                        <option value="css">CSS</option>
+                        <option value="java">Java</option>
+                        <option value="cpp">C++</option>
+                        <option value="text">Text</option>
+                    </select>
                 </div>
-                
-                <div class="video-controls">
-                    <button id="play-btn">再生</button>
-                    <button id="pause-btn">一時停止</button>
-                    <button id="sync-btn">再同期</button>
+
+                <!-- File Name Input -->
+                <div class="flex items-center space-x-2">
+                    <label class="text-sm font-medium">ファイル名:</label>
+                    <input type="text" id="fileNameInput" placeholder="untitled" 
+                           class="bg-gray-700 border border-gray-600 rounded px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-32">
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center space-x-2">
+                    <button id="saveBtn" class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm transition-colors">
+                        <i class="fas fa-save mr-1"></i>保存
+                    </button>
+                    <button id="loadBtn" class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-sm transition-colors">
+                        <i class="fas fa-folder-open mr-1"></i>読み込み
+                    </button>
+                    <button id="exportBtn" class="bg-purple-600 hover:bg-purple-700 px-3 py-1 rounded text-sm transition-colors">
+                        <i class="fas fa-download mr-1"></i>エクスポート
+                    </button>
+                    <button id="clearBtn" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm transition-colors">
+                        <i class="fas fa-trash mr-1"></i>クリア
+                    </button>
                 </div>
             </div>
-            
-            <div class="controls">
-                <div class="tab-container">
-                    <div class="tab active" id="create-tab">ルームを作成</div>
-                    <div class="tab" id="join-tab">ルームに参加</div>
-                </div>
-                
-                <div class="tab-content active" id="create-room-tab">
-                    <h2>新しいルームを作成</h2>
-                    
-                    <div class="input-group">
-                        <label for="create-video-id">YouTube動画ID/URL:</label>
-                        <input type="text" id="create-video-id" placeholder="例: dQw4w9WgXcQ または YouTube URL">
-                    </div>
-                    
-                    <div class="input-group">
-                        <label for="create-username">ニックネーム:</label>
-                        <input type="text" id="create-username" placeholder="チャットに表示される名前">
-                    </div>
-                    
-                    <button id="create-room-btn">ルーム作成</button>
-                </div>
-                
-                <div class="tab-content" id="join-room-tab">
-                    <h2>既存のルームに参加</h2>
-                    
-                    <div class="input-group">
-                        <label for="join-room-id">ルームID:</label>
-                        <input type="text" id="join-room-id" placeholder="ルームIDを入力">
-                    </div>
-                    
-                    <div class="input-group">
-                        <label for="join-username">ニックネーム:</label>
-                        <input type="text" id="join-username" placeholder="チャットに表示される名前">
-                    </div>
-                    
-                    <button id="join-room-btn">ルームに参加</button>
-                </div>
-                
-                <div id="room-info" class="room-info" style="display: none;">
-                    <p>現在のルームID: <span id="current-room-id"></span></p>
-                    <p>このIDを友達に共有してください</p>
-                    <button id="copy-room">ルームIDをコピー</button>
-                </div>
-                
-                <p id="connection-status" class="status disconnected">未接続</p>
-                
-                <div id="connected-users" style="display: none;">
-                    <h3>接続中のユーザー:</h3>
-                    <ul id="user-list"></ul>
-                </div>
+
+            <!-- Saved Files -->
+            <div class="flex items-center space-x-2">
+                <label class="text-sm font-medium">保存済み:</label>
+                <select id="savedFilesSelect" class="bg-gray-700 border border-gray-600 rounded px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1">
+                    <option value="">ファイルを選択...</option>
+                </select>
+                <button id="deleteFileBtn" class="bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-sm transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
         </div>
-        
-        <div id="chat-container" style="display: none;">
-            <h2>チャット</h2>
-            <div id="chat-messages"></div>
-            <div class="message-input">
-                <input type="text" id="message-text" placeholder="メッセージを入力...">
-                <button id="send-message">送信</button>
-            </div>
+
+        <!-- Code Editor -->
+        <div class="bg-gray-800 rounded-lg overflow-hidden" style="height: 600px;">
+            <textarea id="codeEditor" placeholder="ここにコードを入力してください..."></textarea>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-4 text-center text-gray-400 text-sm">
+            <p>自動保存機能付き | Maya MEL言語対応 | 複数言語構文ハイライト</p>
         </div>
     </div>
 
     <script>
-        // YouTube API
-        let player;
-        let isHost = false;
-        let roomID = '';
-        let peer;
-        let connections = [];
-        let username = 'ゲスト' + Math.floor(Math.random() * 1000);
-        let isSyncingFromPeer = false;
-        
-        // YouTube API読み込み
-        const tag = document.createElement('script');
-        tag.src = "https://www.youtube.com/iframe_api";
-        const firstScriptTag = document.getElementsByTagName('script')[0];
-        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-        
-        // YouTubeプレーヤー初期化
-        function onYouTubeIframeAPIReady() {
-            player = new YT.Player('player', {
-                height: '100%',
-                width: '100%',
-                videoId: '',
-                playerVars: {
-                    'playsinline': 1,
-                    'rel': 0,
-                    'modestbranding': 1
-                },
-                events: {
-                    'onReady': onPlayerReady,
-                    'onStateChange': onPlayerStateChange
+        // MEL Language Mode Definition
+        CodeMirror.defineMode("mel", function(config, parserConfig) {
+            const keywords = "if else for while do switch case default break continue return function proc global source catch";
+            const builtins = "print clear select move rotate scale setAttr getAttr listAttr connectAttr disconnectAttr delete duplicate group ungroup parent unparent xform ls file playbackOptions currentTime";
+            const types = "int float string vector matrix";
+            
+            const keywordsRegex = new RegExp("\\b(" + keywords.split(" ").join("|") + ")\\b");
+            const builtinsRegex = new RegExp("\\b(" + builtins.split(" ").join("|") + ")\\b");
+            const typesRegex = new RegExp("\\b(" + types.split(" ").join("|") + ")\\b");
+
+            return {
+                token: function(stream, state) {
+                    if (stream.match(/\/\/.*$/)) {
+                        return "comment";
+                    }
+                    if (stream.match(/\/\*[\s\S]*?\*\//)) {
+                        return "comment";
+                    }
+                    if (stream.match(/"([^"\\]|\\.)*"/)) {
+                        return "string";
+                    }
+                    if (stream.match(/'([^'\\]|\\.)*'/)) {
+                        return "string";
+                    }
+                    if (stream.match(/\b\d+\.?\d*\b/)) {
+                        return "number";
+                    }
+                    if (stream.match(keywordsRegex)) {
+                        return "keyword";
+                    }
+                    if (stream.match(builtinsRegex)) {
+                        return "builtin";
+                    }
+                    if (stream.match(typesRegex)) {
+                        return "type";
+                    }
+                    if (stream.match(/[$][a-zA-Z_][a-zA-Z0-9_]*/)) {
+                        return "variable";
+                    }
+                    stream.next();
+                    return null;
                 }
-            });
-        }
-        
-        function onPlayerReady(event) {
-            console.log('YouTube Player ready');
-            document.getElementById('play-btn').addEventListener('click', () => {
-                player.playVideo();
-                if (connections.length > 0) {
-                    broadcastAction('play', player.getCurrentTime());
-                }
-            });
-            
-            document.getElementById('pause-btn').addEventListener('click', () => {
-                player.pauseVideo();
-                if (connections.length > 0) {
-                    broadcastAction('pause');
-                }
-            });
-            
-            document.getElementById('sync-btn').addEventListener('click', () => {
-                if (connections.length > 0) {
-                    broadcastAction('sync', player.getCurrentTime());
-                }
-            });
-        }
-        
-        function onPlayerStateChange(event) {
-            if (isSyncingFromPeer) return;
-            
-            if (event.data === YT.PlayerState.PLAYING) {
-                if (connections.length > 0) {
-                    broadcastAction('play', player.getCurrentTime());
-                }
-            } else if (event.data === YT.PlayerState.PAUSED) {
-                if (connections.length > 0) {
-                    broadcastAction('pause');
-                }
-            }
-        }
-        
-        // 初期化
-        document.addEventListener('DOMContentLoaded', () => {
-            // ユーザー名設定
-            document.getElementById('create-username').value = username;
-            document.getElementById('join-username').value = username;
-            
-            // タブ切り替え
-            document.getElementById('create-tab').addEventListener('click', () => {
-                document.getElementById('create-tab').classList.add('active');
-                document.getElementById('join-tab').classList.remove('active');
-                document.getElementById('create-room-tab').classList.add('active');
-                document.getElementById('join-room-tab').classList.remove('active');
-            });
-            
-            document.getElementById('join-tab').addEventListener('click', () => {
-                document.getElementById('join-tab').classList.add('active');
-                document.getElementById('create-tab').classList.remove('active');
-                document.getElementById('join-room-tab').classList.add('active');
-                document.getElementById('create-room-tab').classList.remove('active');
-            });
-            
-            // ユーザー名を更新
-            document.getElementById('create-username').addEventListener('change', (e) => {
-                username = e.target.value || username;
-                document.getElementById('join-username').value = username;
-            });
-            
-            document.getElementById('join-username').addEventListener('change', (e) => {
-                username = e.target.value || username;
-                document.getElementById('create-username').value = username;
-            });
-            
-            // ルーム作成ボタン
-            document.getElementById('create-room-btn').addEventListener('click', createRoom);
-            
-            // ルーム参加ボタン
-            document.getElementById('join-room-btn').addEventListener('click', joinRoom);
-            
-            // メッセージ送信
-            document.getElementById('send-message').addEventListener('click', sendChatMessage);
-            document.getElementById('message-text').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    sendChatMessage();
-                }
-            });
-            
-            // ルームIDコピー
-            document.getElementById('copy-room').addEventListener('click', () => {
-                const roomIdText = document.getElementById('current-room-id').textContent;
-                navigator.clipboard.writeText(roomIdText)
-                    .then(() => {
-                        alert('ルームIDがクリップボードにコピーされました');
-                    });
-            });
-            
-            // YouTube URLからIDを抽出する関数
-            function extractVideoID(url) {
-                const regExp = /^.*(youtu\.be\/|v\/|e\/|u\/\w+\/|embed\/|v=)([^#\&\?]*).*/;
-                const match = url.match(regExp);
-                return (match && match[2].length === 11) ? match[2] : url;
-            }
-            
-            // 入力されたURLまたはIDを処理
-            document.getElementById('create-video-id').addEventListener('blur', function() {
-                this.value = extractVideoID(this.value);
-            });
+            };
         });
-        
-        function createRoom() {
-            const videoIdInput = document.getElementById('create-video-id').value;
-            if (!videoIdInput) {
-                alert('YouTube動画IDまたはURLを入力してください');
-                return;
+
+        // Initialize CodeMirror
+        const editor = CodeMirror.fromTextArea(document.getElementById('codeEditor'), {
+            theme: 'monokai',
+            lineNumbers: true,
+            mode: 'mel',
+            autoCloseBrackets: true,
+            matchBrackets: true,
+            styleActiveLine: true,
+            indentUnit: 4,
+            indentWithTabs: false,
+            lineWrapping: true
+        });
+
+        // Language modes mapping
+        const languageModes = {
+            'mel': 'mel',
+            'python': 'python',
+            'javascript': 'javascript',
+            'html': 'xml',
+            'css': 'css',
+            'java': 'text/x-java',
+            'cpp': 'text/x-c++src',
+            'text': 'text/plain'
+        };
+
+        // Elements
+        const languageSelect = document.getElementById('languageSelect');
+        const fileNameInput = document.getElementById('fileNameInput');
+        const saveBtn = document.getElementById('saveBtn');
+        const loadBtn = document.getElementById('loadBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const savedFilesSelect = document.getElementById('savedFilesSelect');
+        const deleteFileBtn = document.getElementById('deleteFileBtn');
+
+        // Auto-save functionality
+        let autoSaveTimeout;
+        editor.on('change', () => {
+            clearTimeout(autoSaveTimeout);
+            autoSaveTimeout = setTimeout(() => {
+                const code = editor.getValue();
+                localStorage.setItem('codeNotepad_autoSave', code);
+                localStorage.setItem('codeNotepad_autoSave_lang', languageSelect.value);
+            }, 1000);
+        });
+
+        // Load auto-saved content
+        function loadAutoSave() {
+            const savedCode = localStorage.getItem('codeNotepad_autoSave');
+            const savedLang = localStorage.getItem('codeNotepad_autoSave_lang');
+            if (savedCode) {
+                editor.setValue(savedCode);
             }
-            
-            // ユーザー名を更新
-            username = document.getElementById('create-username').value || username;
-            
-            // ルームID生成
-            roomID = 'room_' + Math.random().toString(36).substr(2, 9);
-            
-            document.getElementById('current-room-id').textContent = roomID;
-            document.getElementById('room-info').style.display = 'block';
-            
-            // PeerJS初期化
-            if (peer) {
-                peer.destroy();
-            }
-            
-            peer = new Peer(roomID, {
-                debug: 2
-            });
-            
-            peer.on('open', (id) => {
-                console.log('My peer ID is: ' + id);
-                isHost = true;
-                
-                document.getElementById('connection-status').textContent = '接続済み (ホスト)';
-                document.getElementById('connection-status').className = 'status connected';
-                document.getElementById('chat-container').style.display = 'block';
-                document.getElementById('connected-users').style.display = 'block';
-                
-                // 動画をロード
-                if (player && videoIdInput) {
-                    player.loadVideoById(videoIdInput);
-                }
-            });
-            
-            // 他のユーザーからの接続を処理
-            peer.on('connection', (conn) => {
-                setupConnection(conn);
-            });
-            
-            peer.on('error', (err) => {
-                console.error('PeerJS error:', err);
-                alert('接続エラー: ' + err);
-                document.getElementById('connection-status').textContent = '接続エラー: ' + err.type;
-                document.getElementById('connection-status').className = 'status disconnected';
-            });
-        }
-        
-        function joinRoom() {
-            const roomIdInput = document.getElementById('join-room-id').value;
-            if (!roomIdInput) {
-                alert('ルームIDを入力してください');
-                return;
-            }
-            
-            // ユーザー名を更新
-            username = document.getElementById('join-username').value || username;
-            
-            // PeerJS初期化
-            if (peer) {
-                peer.destroy();
-            }
-            
-            // ランダムIDで自分のピアを作成
-            const myPeerId = 'guest_' + Math.random().toString(36).substr(2, 9);
-            peer = new Peer(myPeerId, {
-                debug: 2
-            });
-            
-            peer.on('open', (id) => {
-                console.log('My peer ID is: ' + id);
-                
-                // ホストに接続
-                const conn = peer.connect(roomIdInput, {
-                    reliable: true
-                });
-                
-                conn.on('open', () => {
-                    console.log('Connected to host: ' + conn.peer);
-                    setupConnection(conn);
-                    roomID = roomIdInput;
-                    
-                    document.getElementById('current-room-id').textContent = roomID;
-                    document.getElementById('room-info').style.display = 'block';
-                    document.getElementById('connection-status').textContent = '接続済み (ゲスト)';
-                    document.getElementById('connection-status').className = 'status connected';
-                    document.getElementById('chat-container').style.display = 'block';
-                    document.getElementById('connected-users').style.display = 'block';
-                    
-                    // ユーザー情報を送信
-                    conn.send({
-                        type: 'user-info',
-                        username: username
-                    });
-                    
-                    // 動画情報をリクエスト
-                    conn.send({
-                        type: 'request-video-info'
-                    });
-                });
-                
-                conn.on('error', (err) => {
-                    console.error('Connection error:', err);
-                    alert('接続エラー: 指定されたルームが見つかりません');
-                    document.getElementById('connection-status').textContent = '接続エラー: ルームが見つかりません';
-                    document.getElementById('connection-status').className = 'status disconnected';
-                });
-            });
-            
-            peer.on('error', (err) => {
-                console.error('PeerJS error:', err);
-                
-                if (err.type === 'peer-unavailable') {
-                    alert('エラー: 指定されたルームが見つかりません');
-                    document.getElementById('connection-status').textContent = '接続エラー: ルームが見つかりません';
-                } else {
-                    alert('接続エラー: ' + err);
-                    document.getElementById('connection-status').textContent = '接続エラー: ' + err.type;
-                }
-                document.getElementById('connection-status').className = 'status disconnected';
-            });
-        }
-        
-        function setupConnection(conn) {
-            connections.push(conn);
-            updateUserList();
-            
-            conn.on('data', (data) => {
-                handlePeerMessage(conn, data);
-            });
-            
-            conn.on('close', () => {
-                console.log('Connection closed');
-                connections = connections.filter(c => c.peer !== conn.peer);
-                updateUserList();
-                addChatMessage('システム', `ユーザーが切断しました`);
-            });
-        }
-        
-        function handlePeerMessage(conn, data) {
-            console.log('Received data:', data);
-            
-            switch (data.type) {
-                case 'play':
-                    isSyncingFromPeer = true;
-                    if (Math.abs(player.getCurrentTime() - data.time) > 1) {
-                        player.seekTo(data.time);
-                    }
-                    player.playVideo();
-                    setTimeout(() => { isSyncingFromPeer = false; }, 500);
-                    break;
-                    
-                case 'pause':
-                    isSyncingFromPeer = true;
-                    player.pauseVideo();
-                    setTimeout(() => { isSyncingFromPeer = false; }, 500);
-                    break;
-                    
-                case 'sync':
-                    isSyncingFromPeer = true;
-                    player.seekTo(data.time);
-                    setTimeout(() => { isSyncingFromPeer = false; }, 500);
-                    break;
-                    
-                case 'chat':
-                    addChatMessage(data.username, data.message);
-                    break;
-                    
-                case 'user-info':
-                    conn.username = data.username;
-                    updateUserList();
-                    addChatMessage('システム', `${data.username} が参加しました`);
-                    break;
-                    
-                case 'request-video-info':
-                    if (isHost && player) {
-                        conn.send({
-                            type: 'video-info',
-                            videoId: player.getVideoData().video_id,
-                            currentTime: player.getCurrentTime(),
-                            isPlaying: player.getPlayerState() === YT.PlayerState.PLAYING
-                        });
-                    }
-                    break;
-                    
-                case 'video-info':
-                    if (player) {
-                        player.loadVideoById(data.videoId, data.currentTime);
-                        if (!data.isPlaying) {
-                            setTimeout(() => {
-                                player.pauseVideo();
-                            }, 1000);
-                        }
-                    }
-                    break;
+            if (savedLang) {
+                languageSelect.value = savedLang;
+                changeLanguage();
             }
         }
-        
-        function broadcastAction(actionType, time) {
-            const message = {
-                type: actionType
+
+        // Change language mode
+        function changeLanguage() {
+            const selectedLang = languageSelect.value;
+            const mode = languageModes[selectedLang];
+            editor.setOption('mode', mode);
+        }
+
+        // Save file
+        function saveFile() {
+            const fileName = fileNameInput.value.trim() || 'untitled';
+            const code = editor.getValue();
+            const language = languageSelect.value;
+            
+            const fileData = {
+                code: code,
+                language: language,
+                timestamp: new Date().toISOString()
             };
             
-            if (time !== undefined) {
-                message.time = time;
-            }
+            localStorage.setItem(`codeNotepad_file_${fileName}`, JSON.stringify(fileData));
+            updateSavedFilesList();
             
-            connections.forEach(conn => {
-                conn.send(message);
-            });
+            // Show success message
+            showMessage('ファイルが保存されました: ' + fileName, 'success');
         }
-        
-        function sendChatMessage() {
-            const messageInput = document.getElementById('message-text');
-            const message = messageInput.value.trim();
+
+        // Load file
+        function loadFile(fileName) {
+            if (!fileName) return;
             
-            if (message) {
-                addChatMessage(username, message, true);
-                
-                connections.forEach(conn => {
-                    conn.send({
-                        type: 'chat',
-                        username: username,
-                        message: message
-                    });
-                });
-                
-                messageInput.value = '';
+            const fileData = localStorage.getItem(`codeNotepad_file_${fileName}`);
+            if (fileData) {
+                const parsed = JSON.parse(fileData);
+                editor.setValue(parsed.code);
+                languageSelect.value = parsed.language;
+                fileNameInput.value = fileName;
+                changeLanguage();
+                showMessage('ファイルが読み込まれました: ' + fileName, 'success');
             }
         }
-        
-        function addChatMessage(user, message, isSelf = false) {
-            const chatMessages = document.getElementById('chat-messages');
-            const messageElement = document.createElement('div');
-            messageElement.className = 'message' + (isSelf ? ' self' : '');
-            messageElement.innerHTML = `<strong>${user}:</strong> ${message}`;
-            chatMessages.appendChild(messageElement);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        // Export file
+        function exportFile() {
+            const fileName = fileNameInput.value.trim() || 'untitled';
+            const language = languageSelect.value;
+            const extension = getFileExtension(language);
+            const code = editor.getValue();
+            
+            const blob = new Blob([code], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${fileName}.${extension}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showMessage('ファイルがエクスポートされました', 'success');
         }
-        
-        function updateUserList() {
-            const userList = document.getElementById('user-list');
-            userList.innerHTML = '';
+
+        // Get file extension based on language
+        function getFileExtension(language) {
+            const extensions = {
+                'mel': 'mel',
+                'python': 'py',
+                'javascript': 'js',
+                'html': 'html',
+                'css': 'css',
+                'java': 'java',
+                'cpp': 'cpp',
+                'text': 'txt'
+            };
+            return extensions[language] || 'txt';
+        }
+
+        // Clear editor
+        function clearEditor() {
+            if (confirm('エディタの内容をクリアしますか？')) {
+                editor.setValue('');
+                fileNameInput.value = '';
+                showMessage('エディタがクリアされました', 'info');
+            }
+        }
+
+        // Update saved files list
+        function updateSavedFilesList() {
+            savedFilesSelect.innerHTML = '<option value="">ファイルを選択...</option>';
             
-            // 自分を追加
-            const selfItem = document.createElement('li');
-            selfItem.textContent = `${username} (あなた)`;
-            userList.appendChild(selfItem);
-            
-            // 接続中のユーザーを追加
-            connections.forEach(conn => {
-                const userItem = document.createElement('li');
-                userItem.textContent = conn.username || 'ゲスト';
-                userList.appendChild(userItem);
+            const keys = Object.keys(localStorage).filter(key => key.startsWith('codeNotepad_file_'));
+            keys.forEach(key => {
+                const fileName = key.replace('codeNotepad_file_', '');
+                const option = document.createElement('option');
+                option.value = fileName;
+                option.textContent = fileName;
+                savedFilesSelect.appendChild(option);
             });
         }
+
+        // Delete file
+        function deleteFile() {
+            const fileName = savedFilesSelect.value;
+            if (!fileName) return;
+            
+            if (confirm(`ファイル "${fileName}" を削除しますか？`)) {
+                localStorage.removeItem(`codeNotepad_file_${fileName}`);
+                updateSavedFilesList();
+                showMessage('ファイルが削除されました: ' + fileName, 'info');
+            }
+        }
+
+        // Show message
+        function showMessage(message, type = 'info') {
+            const colors = {
+                'success': 'bg-green-600',
+                'error': 'bg-red-600',
+                'info': 'bg-blue-600'
+            };
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `fixed top-4 right-4 ${colors[type]} text-white px-4 py-2 rounded shadow-lg z-50 transition-opacity duration-300`;
+            messageDiv.textContent = message;
+            
+            document.body.appendChild(messageDiv);
+            
+            setTimeout(() => {
+                messageDiv.style.opacity = '0';
+                setTimeout(() => {
+                    document.body.removeChild(messageDiv);
+                }, 300);
+            }, 3000);
+        }
+
+        // Event listeners
+        languageSelect.addEventListener('change', changeLanguage);
+        saveBtn.addEventListener('click', saveFile);
+        loadBtn.addEventListener('click', () => {
+            const fileName = savedFilesSelect.value;
+            if (fileName) {
+                loadFile(fileName);
+            } else {
+                showMessage('ファイルを選択してください', 'error');
+            }
+        });
+        exportBtn.addEventListener('click', exportFile);
+        clearBtn.addEventListener('click', clearEditor);
+        savedFilesSelect.addEventListener('change', (e) => {
+            if (e.target.value) {
+                loadFile(e.target.value);
+            }
+        });
+        deleteFileBtn.addEventListener('click', deleteFile);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch (e.key) {
+                    case 's':
+                        e.preventDefault();
+                        saveFile();
+                        break;
+                    case 'o':
+                        e.preventDefault();
+                        const fileName = savedFilesSelect.value;
+                        if (fileName) loadFile(fileName);
+                        break;
+                    case 'e':
+                        e.preventDefault();
+                        exportFile();
+                        break;
+                }
+            }
+        });
+
+        // Initialize
+        loadAutoSave();
+        updateSavedFilesList();
+        
+        // Set focus to editor
+        setTimeout(() => {
+            editor.focus();
+        }, 100);
     </script>
 </body>
 </html>
