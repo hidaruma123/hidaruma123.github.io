@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeMemo - オンラインコードメモ帳</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/lib/codemirror.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/theme/monokai.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/theme/material.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/theme/dracula.css">
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/lib/codemirror.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/mode/python/python.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/mode/css/css.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/mode/xml/xml.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/mode/htmlmixed/htmlmixed.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/mode/php/php.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/mode/clike/clike.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/mode/sql/sql.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/mode/shell/shell.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/mode/yaml/yaml.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/mode/markdown/markdown.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/addon/selection/active-line.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/addon/edit/matchbrackets.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/addon/fold/foldcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/addon/fold/foldgutter.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/addon/fold/brace-fold.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/addon/fold/foldgutter.css">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto p-4">
+        <!-- ヘッダー -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800 mb-2">
+                        <i class="fas fa-code text-blue-600"></i>
+                        CodeMemo
+                    </h1>
+                    <p class="text-gray-600">オンラインコードメモ帳 - 保存・編集・共有</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button id="newFileBtn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition duration-200">
+                        <i class="fas fa-plus mr-2"></i>新規
+                    </button>
+                    <button id="saveBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition duration-200">
+                        <i class="fas fa-save mr-2"></i>保存
+                    </button>
+                    <button id="shareBtn" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded transition duration-200">
+                        <i class="fas fa-share mr-2"></i>共有
+                    </button>
+                    <button id="exportBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded transition duration-200">
+                        <i class="fas fa-download mr-2"></i>エクスポート
+                    </button>
+                    <label for="importFile" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded transition duration-200 cursor-pointer">
+                        <i class="fas fa-upload mr-2"></i>インポート
+                    </label>
+                    <input type="file" id="importFile" class="hidden" accept=".json">
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <!-- サイドバー -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow-md p-4 mb-4">
+                    <h3 class="text-lg font-semibold mb-3 text-gray-800">
+                        <i class="fas fa-folder mr-2"></i>ファイル管理
+                    </h3>
+                    <div class="mb-4">
+                        <input type="text" id="fileName" placeholder="ファイル名" class="w-full p-2 border border-gray-300 rounded mb-2">
+                        <select id="languageSelect" class="w-full p-2 border border-gray-300 rounded">
+                            <option value="javascript">JavaScript</option>
+                            <option value="python">Python</option>
+                            <option value="htmlmixed">HTML</option>
+                            <option value="css">CSS</option>
+                            <option value="php">PHP</option>
+                            <option value="text/x-java">Java</option>
+                            <option value="text/x-c++src">C++</option>
+                            <option value="text/x-csrc">C</option>
+                            <option value="sql">SQL</option>
+                            <option value="shell">Shell</option>
+                            <option value="yaml">YAML</option>
+                            <option value="markdown">Markdown</option>
+                            <option value="text">Plain Text</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">テーマ</label>
+                        <select id="themeSelect" class="w-full p-2 border border-gray-300 rounded">
+                            <option value="default">Default</option>
+                            <option value="monokai">Monokai</option>
+                            <option value="material">Material</option>
+                            <option value="dracula">Dracula</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md p-4">
+                    <h3 class="text-lg font-semibold mb-3 text-gray-800">
+                        <i class="fas fa-list mr-2"></i>保存済みファイル
+                    </h3>
+                    <div id="fileList" class="space-y-2">
+                        <!-- ファイルリストがここに表示される -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- メインエディタ -->
+            <div class="lg:col-span-3">
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="bg-gray-50 border-b px-4 py-3 flex justify-between items-center">
+                        <div class="flex items-center">
+                            <i class="fas fa-edit text-gray-600 mr-2"></i>
+                            <span id="currentFileName" class="font-medium text-gray-800">新しいファイル</span>
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            行: <span id="lineCount">1</span> | 
+                            文字: <span id="charCount">0</span>
+                        </div>
+                    </div>
+                    <div id="editor" style="height: 500px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 共有モーダル -->
+    <div id="shareModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 class="text-lg font-semibold mb-4">
+                <i class="fas fa-share mr-2"></i>ファイルを共有
+            </h3>
+            <p class="text-gray-600 mb-4">このURLをコピーして共有してください：</p>
+            <div class="flex">
+                <input type="text" id="shareUrl" class="flex-1 p-2 border border-gray-300 rounded-l" readonly>
+                <button id="copyUrlBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-r transition duration-200">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </div>
+            <div class="flex justify-end mt-4">
+                <button id="closeShareModal" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded transition duration-200">
+                    閉じる
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class CodeMemoApp {
+            constructor() {
+                this.editor = null;
+                this.currentFile = null;
+                this.files = this.loadFiles();
+                this.init();
+            }
+
+            init() {
+                this.initEditor();
+                this.bindEvents();
+                this.updateFileList();
+                this.loadSharedFile();
+            }
+
+            initEditor() {
+                this.editor = CodeMirror(document.getElementById('editor'), {
+                    lineNumbers: true,
+                    mode: 'javascript',
+                    theme: 'default',
+                    styleActiveLine: true,
+                    autoCloseBrackets: true,
+                    matchBrackets: true,
+                    foldGutter: true,
+                    gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+                    lineWrapping: true,
+                    value: '// Welcome to CodeMemo!\n// Start coding here...\n\nconsole.log("Hello, CodeMemo!");'
+                });
+
+                this.editor.on('change', () => {
+                    this.updateStats();
+                });
+
+                this.updateStats();
+            }
+
+            bindEvents() {
+                // ボタンイベント
+                document.getElementById('newFileBtn').addEventListener('click', () => this.newFile());
+                document.getElementById('saveBtn').addEventListener('click', () => this.saveFile());
+                document.getElementById('shareBtn').addEventListener('click', () => this.shareFile());
+                document.getElementById('exportBtn').addEventListener('click', () => this.exportFiles());
+                document.getElementById('importFile').addEventListener('change', (e) => this.importFiles(e));
+
+                // セレクトボックス
+                document.getElementById('languageSelect').addEventListener('change', (e) => {
+                    this.editor.setOption('mode', e.target.value);
+                });
+
+                document.getElementById('themeSelect').addEventListener('change', (e) => {
+                    this.editor.setOption('theme', e.target.value);
+                });
+
+                // モーダル
+                document.getElementById('closeShareModal').addEventListener('click', () => {
+                    document.getElementById('shareModal').classList.add('hidden');
+                });
+
+                document.getElementById('copyUrlBtn').addEventListener('click', () => {
+                    const urlInput = document.getElementById('shareUrl');
+                    urlInput.select();
+                    document.execCommand('copy');
+                    this.showNotification('URLをコピーしました！');
+                });
+
+                // ショートカットキー
+                document.addEventListener('keydown', (e) => {
+                    if (e.ctrlKey || e.metaKey) {
+                        if (e.key === 's') {
+                            e.preventDefault();
+                            this.saveFile();
+                        } else if (e.key === 'n') {
+                            e.preventDefault();
+                            this.newFile();
+                        }
+                    }
+                });
+            }
+
+            newFile() {
+                this.currentFile = null;
+                this.editor.setValue('');
+                document.getElementById('fileName').value = '';
+                document.getElementById('currentFileName').textContent = '新しいファイル';
+                document.getElementById('languageSelect').value = 'javascript';
+                this.editor.setOption('mode', 'javascript');
+            }
+
+            saveFile() {
+                const fileName = document.getElementById('fileName').value.trim();
+                if (!fileName) {
+                    this.showNotification('ファイル名を入力してください', 'error');
+                    return;
+                }
+
+                const language = document.getElementById('languageSelect').value;
+                const content = this.editor.getValue();
+
+                const file = {
+                    id: this.currentFile ? this.currentFile.id : Date.now().toString(),
+                    name: fileName,
+                    language: language,
+                    content: content,
+                    lastModified: new Date().toISOString()
+                };
+
+                if (this.currentFile) {
+                    const index = this.files.findIndex(f => f.id === this.currentFile.id);
+                    this.files[index] = file;
+                } else {
+                    this.files.push(file);
+                }
+
+                this.currentFile = file;
+                this.saveFiles();
+                this.updateFileList();
+                document.getElementById('currentFileName').textContent = fileName;
+                this.showNotification('ファイルを保存しました！');
+            }
+
+            loadFile(file) {
+                this.currentFile = file;
+                this.editor.setValue(file.content);
+                document.getElementById('fileName').value = file.name;
+                document.getElementById('languageSelect').value = file.language;
+                document.getElementById('currentFileName').textContent = file.name;
+                this.editor.setOption('mode', file.language);
+            }
+
+            deleteFile(fileId) {
+                if (confirm('ファイルを削除しますか？')) {
+                    this.files = this.files.filter(f => f.id !== fileId);
+                    this.saveFiles();
+                    this.updateFileList();
+                    
+                    if (this.currentFile && this.currentFile.id === fileId) {
+                        this.newFile();
+                    }
+                    this.showNotification('ファイルを削除しました');
+                }
+            }
+
+            shareFile() {
+                if (!this.currentFile) {
+                    this.showNotification('共有するファイルがありません', 'error');
+                    return;
+                }
+
+                const shareData = {
+                    name: this.currentFile.name,
+                    language: this.currentFile.language,
+                    content: this.currentFile.content
+                };
+
+                const encoded = btoa(JSON.stringify(shareData));
+                const shareUrl = `${window.location.origin}${window.location.pathname}?share=${encoded}`;
+                
+                document.getElementById('shareUrl').value = shareUrl;
+                document.getElementById('shareModal').classList.remove('hidden');
+            }
+
+            loadSharedFile() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const sharedData = urlParams.get('share');
+                
+                if (sharedData) {
+                    try {
+                        const decoded = JSON.parse(atob(sharedData));
+                        this.editor.setValue(decoded.content);
+                        document.getElementById('fileName').value = decoded.name + '_shared';
+                        document.getElementById('languageSelect').value = decoded.language;
+                        document.getElementById('currentFileName').textContent = decoded.name + ' (共有)';
+                        this.editor.setOption('mode', decoded.language);
+                        this.showNotification('共有ファイルを読み込みました');
+                    } catch (e) {
+                        console.error('Failed to load shared file:', e);
+                    }
+                }
+            }
+
+            exportFiles() {
+                const exportData = {
+                    files: this.files,
+                    exportDate: new Date().toISOString(),
+                    version: "1.0"
+                };
+
+                const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+                    type: 'application/json'
+                });
+
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `codememo_export_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                this.showNotification('ファイルをエクスポートしました');
+            }
+
+            importFiles(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const importData = JSON.parse(e.target.result);
+                        if (importData.files && Array.isArray(importData.files)) {
+                            // IDの重複を避けるため、新しいIDを生成
+                            const newFiles = importData.files.map(f => ({
+                                ...f,
+                                id: Date.now().toString() + Math.random().toString(36).substr(2, 9)
+                            }));
+                            
+                            this.files = [...this.files, ...newFiles];
+                            this.saveFiles();
+                            this.updateFileList();
+                            this.showNotification(`${newFiles.length}個のファイルをインポートしました`);
+                        } else {
+                            throw new Error('Invalid file format');
+                        }
+                    } catch (e) {
+                        this.showNotification('ファイルの読み込みに失敗しました', 'error');
+                    }
+                };
+                reader.readAsText(file);
+                event.target.value = '';
+            }
+
+            updateFileList() {
+                const fileList = document.getElementById('fileList');
+                fileList.innerHTML = '';
+
+                if (this.files.length === 0) {
+                    fileList.innerHTML = '<p class="text-gray-500 text-sm">保存されたファイルはありません</p>';
+                    return;
+                }
+
+                this.files.forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'flex items-center justify-between p-2 bg-gray-50 rounded hover:bg-gray-100 transition duration-200';
+                    
+                    fileItem.innerHTML = `
+                        <div class="flex-1 cursor-pointer" onclick="app.loadFile(${JSON.stringify(file).replace(/"/g, '&quot;')})">
+                            <div class="font-medium text-sm text-gray-800">${file.name}</div>
+                            <div class="text-xs text-gray-500">${file.language} • ${new Date(file.lastModified).toLocaleDateString()}</div>
+                        </div>
+                        <button onclick="app.deleteFile('${file.id}')" class="text-red-500 hover:text-red-700 ml-2">
+                            <i class="fas fa-trash text-sm"></i>
+                        </button>
+                    `;
+                    
+                    fileList.appendChild(fileItem);
+                });
+            }
+
+            updateStats() {
+                const content = this.editor.getValue();
+                const lines = content.split('\n').length;
+                const chars = content.length;
+                
+                document.getElementById('lineCount').textContent = lines;
+                document.getElementById('charCount').textContent = chars;
+            }
+
+            saveFiles() {
+                localStorage.setItem('codeMemoFiles', JSON.stringify(this.files));
+            }
+
+            loadFiles() {
+                const saved = localStorage.getItem('codeMemoFiles');
+                return saved ? JSON.parse(saved) : [];
+            }
+
+            showNotification(message, type = 'success') {
+                const notification = document.createElement('div');
+                notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white z-50 transition-opacity duration-300 ${
+                    type === 'error' ? 'bg-red-500' : 'bg-green-500'
+                }`;
+                notification.textContent = message;
+                
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                    setTimeout(() => {
+                        document.body.removeChild(notification);
+                    }, 300);
+                }, 3000);
+            }
+        }
+
+        // アプリケーション初期化
+        const app = new CodeMemoApp();
+    </script>
+</body>
+</html>
+    <script id="html_badge_script1">
+        window.__genspark_remove_badge_link = "https://www.genspark.ai/api/html_badge/" +
+            "remove_badge?token=To%2FBnjzloZ3UfQdcSaYfDj1%2F38zbm3qPpPeT3SioVEU0u5TYpcJnZkU8KxUDxdaYW3mJV%2Ba%2FV4I8wAd5silBtT8ZqeRp4bFLxBteuEQScZOERR5zop%2F6oWAKmJbCEPLLKj6uqVB5hCFaKAUERh4n9AYQo3OcL14ZyiUSYbiE4MvVIyt5Of8ka00v6JFxU0Dvt53eHbxgMvt%2Fe5XNjoVun7dA6%2Bkc7WF9aDBqGj%2BAeuRMTlKn1shrtq%2FQYI%2B6YXzxTtOiy%2FAzP57VSPQZobNSvUVlxGQcLhw7mSK0rlKe2Xw2krYexFmqYxQtQeVcd7t8vHLAGHNnBtu2kYcX9wVHQ7o5yP7jgnGi9nJZJg%2FKMJSVa2fC6S1oT%2BS6YVk5uv7T20spRklRJzUWl%2FaSfafYCmMo2mondtCCi3aQhgezdTMx7KaMAZtt6GOuUFadqdT%2Bt3K4%2BgQFa2yLDRPHRhqrSO1lSsjcsfANofD5ugxjdbytTt0ov8tqY8%2FF2CdJXgIgSaJO6YUndcal7HOfCAy4TA%3D%3D";
+        window.__genspark_locale = "ja-JP";
+        window.__genspark_token = "To/BnjzloZ3UfQdcSaYfDj1/38zbm3qPpPeT3SioVEU0u5TYpcJnZkU8KxUDxdaYW3mJV+a/V4I8wAd5silBtT8ZqeRp4bFLxBteuEQScZOERR5zop/6oWAKmJbCEPLLKj6uqVB5hCFaKAUERh4n9AYQo3OcL14ZyiUSYbiE4MvVIyt5Of8ka00v6JFxU0Dvt53eHbxgMvt/e5XNjoVun7dA6+kc7WF9aDBqGj+AeuRMTlKn1shrtq/QYI+6YXzxTtOiy/AzP57VSPQZobNSvUVlxGQcLhw7mSK0rlKe2Xw2krYexFmqYxQtQeVcd7t8vHLAGHNnBtu2kYcX9wVHQ7o5yP7jgnGi9nJZJg/KMJSVa2fC6S1oT+S6YVk5uv7T20spRklRJzUWl/aSfafYCmMo2mondtCCi3aQhgezdTMx7KaMAZtt6GOuUFadqdT+t3K4+gQFa2yLDRPHRhqrSO1lSsjcsfANofD5ugxjdbytTt0ov8tqY8/F2CdJXgIgSaJO6YUndcal7HOfCAy4TA==";
+    </script>
+    
+    <script id="html_notice_dialog_script" src="https://www.genspark.ai/notice_dialog.js"></script>
+    
