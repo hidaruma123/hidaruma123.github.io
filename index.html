@@ -3,451 +3,804 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CodeMemo - オンラインコードメモ帳</title>
+    <title>CodeMemo GitHub Edition - クラウド連携コードメモ帳</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/lib/codemirror.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/theme/monokai.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/theme/material.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/theme/dracula.css">
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/lib/codemirror.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/mode/javascript/javascript.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/mode/python/python.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/mode/css/css.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/mode/xml/xml.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/mode/htmlmixed/htmlmixed.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/mode/php/php.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/mode/clike/clike.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/mode/sql/sql.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/mode/shell/shell.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/mode/yaml/yaml.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/mode/markdown/markdown.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/addon/selection/active-line.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/addon/edit/closebrackets.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/addon/edit/matchbrackets.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/addon/fold/foldcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/addon/fold/foldgutter.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/addon/fold/brace-fold.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.13/addon/fold/foldgutter.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/lib/codemirror.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/theme/monokai.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/theme/default.css">
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/lib/codemirror.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/mode/javascript/javascript.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/mode/python/python.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/mode/htmlmixed/htmlmixed.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/mode/css/css.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/mode/xml/xml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/mode/clike/clike.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/mode/php/php.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/mode/ruby/ruby.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/mode/sql/sql.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/mode/yaml/yaml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/mode/markdown/markdown.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/addon/edit/closebrackets.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/addon/edit/matchbrackets.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.2/addon/selection/active-line.js"></script>
+    <style>
+        .CodeMirror {
+            height: 500px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .file-item:hover {
+            background-color: #f3f4f6;
+        }
+        .file-item.active {
+            background-color: #dbeafe;
+            border-left: 4px solid #3b82f6;
+        }
+        .loading {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .sync-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1001;
+            max-width: 300px;
+        }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
-    <div class="container mx-auto p-4">
-        <!-- ヘッダー -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-800 mb-2">
-                        <i class="fas fa-code text-blue-600"></i>
-                        CodeMemo
-                    </h1>
-                    <p class="text-gray-600">オンラインコードメモ帳 - 保存・編集・共有</p>
+    <!-- 同期インジケーター -->
+    <div id="syncIndicator" class="sync-indicator hidden">
+        <div class="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center">
+            <i class="fas fa-sync-alt animate-spin mr-2"></i>
+            <span>同期中...</span>
+        </div>
+    </div>
+
+    <!-- 通知エリア -->
+    <div id="notification" class="notification hidden">
+        <div class="bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg">
+            <span id="notificationText"></span>
+        </div>
+    </div>
+
+    <!-- ヘッダー -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <i class="fab fa-github text-2xl text-gray-800 mr-3"></i>
+                    <h1 class="text-xl font-bold text-gray-900">CodeMemo GitHub Edition</h1>
                 </div>
-                <div class="flex flex-wrap gap-2">
-                    <button id="newFileBtn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition duration-200">
-                        <i class="fas fa-plus mr-2"></i>新規
+                <div class="flex items-center space-x-4">
+                    <div id="userInfo" class="hidden text-sm text-gray-600 flex items-center">
+                        <i class="fas fa-user mr-2"></i>
+                        <span id="username"></span>
+                    </div>
+                    <button id="configBtn" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                        <i class="fas fa-cog mr-2"></i>設定
                     </button>
-                    <button id="saveBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition duration-200">
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- 設定パネル -->
+        <div id="configPanel" class="bg-white rounded-lg shadow-lg p-6 mb-6 hidden">
+            <h2 class="text-lg font-semibold mb-4 flex items-center">
+                <i class="fab fa-github mr-2"></i>GitHub設定
+            </h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Personal Access Token</label>
+                    <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" 
+                           class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="text-sm text-gray-500 mt-1">
+                        <a href="https://github.com/settings/tokens/new" target="_blank" class="text-blue-500 hover:text-blue-700">
+                            GitHub Settings → Personal access tokens でトークンを作成
+                        </a>
+                    </p>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">リポジトリ名</label>
+                        <input type="text" id="repoInput" placeholder="my-code-memo" 
+                               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">ブランチ</label>
+                        <input type="text" id="branchInput" value="main" 
+                               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                </div>
+                <div class="flex space-x-4">
+                    <button id="saveConfigBtn" class="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors">
                         <i class="fas fa-save mr-2"></i>保存
                     </button>
-                    <button id="shareBtn" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded transition duration-200">
-                        <i class="fas fa-share mr-2"></i>共有
+                    <button id="testConnectionBtn" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                        <i class="fas fa-plug mr-2"></i>接続テスト
                     </button>
-                    <button id="exportBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded transition duration-200">
-                        <i class="fas fa-download mr-2"></i>エクスポート
-                    </button>
-                    <label for="importFile" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded transition duration-200 cursor-pointer">
-                        <i class="fas fa-upload mr-2"></i>インポート
-                    </label>
-                    <input type="file" id="importFile" class="hidden" accept=".json">
                 </div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <!-- サイドバー -->
-            <div class="lg:col-span-1">
-                <div class="bg-white rounded-lg shadow-md p-4 mb-4">
-                    <h3 class="text-lg font-semibold mb-3 text-gray-800">
-                        <i class="fas fa-folder mr-2"></i>ファイル管理
-                    </h3>
-                    <div class="mb-4">
-                        <input type="text" id="fileName" placeholder="ファイル名" class="w-full p-2 border border-gray-300 rounded mb-2">
-                        <select id="languageSelect" class="w-full p-2 border border-gray-300 rounded">
-                            <option value="javascript">JavaScript</option>
-                            <option value="python">Python</option>
-                            <option value="htmlmixed">HTML</option>
-                            <option value="css">CSS</option>
-                            <option value="php">PHP</option>
-                            <option value="text/x-java">Java</option>
-                            <option value="text/x-c++src">C++</option>
-                            <option value="text/x-csrc">C</option>
-                            <option value="sql">SQL</option>
-                            <option value="shell">Shell</option>
-                            <option value="yaml">YAML</option>
-                            <option value="markdown">Markdown</option>
-                            <option value="text">Plain Text</option>
-                        </select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">テーマ</label>
-                        <select id="themeSelect" class="w-full p-2 border border-gray-300 rounded">
-                            <option value="default">Default</option>
-                            <option value="monokai">Monokai</option>
-                            <option value="material">Material</option>
-                            <option value="dracula">Dracula</option>
-                        </select>
+        <!-- メインエディタエリア -->
+        <div id="editorArea" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <!-- ファイル一覧 -->
+                <div class="lg:col-span-1">
+                    <div class="bg-white rounded-lg shadow-lg">
+                        <div class="p-4 border-b border-gray-200">
+                            <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-lg font-semibold">ファイル一覧</h2>
+                                <button id="refreshBtn" class="text-gray-500 hover:text-gray-700">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                            <button id="newFileBtn" class="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                                <i class="fas fa-plus mr-2"></i>新しいファイル
+                            </button>
+                        </div>
+                        <div id="fileList" class="max-h-96 overflow-y-auto">
+                            <!-- ファイル一覧がここに表示されます -->
+                        </div>
                     </div>
                 </div>
 
-                <div class="bg-white rounded-lg shadow-md p-4">
-                    <h3 class="text-lg font-semibold mb-3 text-gray-800">
-                        <i class="fas fa-list mr-2"></i>保存済みファイル
-                    </h3>
-                    <div id="fileList" class="space-y-2">
-                        <!-- ファイルリストがここに表示される -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- メインエディタ -->
-            <div class="lg:col-span-3">
-                <div class="bg-white rounded-lg shadow-md overflow-hidden">
-                    <div class="bg-gray-50 border-b px-4 py-3 flex justify-between items-center">
-                        <div class="flex items-center">
-                            <i class="fas fa-edit text-gray-600 mr-2"></i>
-                            <span id="currentFileName" class="font-medium text-gray-800">新しいファイル</span>
+                <!-- エディタ -->
+                <div class="lg:col-span-3">
+                    <div class="bg-white rounded-lg shadow-lg">
+                        <div class="p-4 border-b border-gray-200">
+                            <div class="flex justify-between items-center mb-4">
+                                <div class="flex items-center space-x-4">
+                                    <input type="text" id="fileNameInput" placeholder="ファイル名を入力..." 
+                                           class="text-lg font-semibold bg-transparent border-none outline-none focus:bg-gray-50 px-2 py-1 rounded">
+                                    <select id="languageSelect" class="bg-gray-50 border border-gray-300 rounded px-3 py-1">
+                                        <option value="javascript">JavaScript</option>
+                                        <option value="python">Python</option>
+                                        <option value="html">HTML</option>
+                                        <option value="css">CSS</option>
+                                        <option value="xml">XML</option>
+                                        <option value="clike">C/C++/Java</option>
+                                        <option value="php">PHP</option>
+                                        <option value="ruby">Ruby</option>
+                                        <option value="sql">SQL</option>
+                                        <option value="yaml">YAML</option>
+                                        <option value="markdown">Markdown</option>
+                                        <option value="text">Plain Text</option>
+                                    </select>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button id="saveBtn" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors">
+                                        <i class="fas fa-save mr-2"></i>保存
+                                    </button>
+                                    <button id="deleteBtn" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors">
+                                        <i class="fas fa-trash mr-2"></i>削除
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                        <div class="text-sm text-gray-500">
-                            行: <span id="lineCount">1</span> | 
-                            文字: <span id="charCount">0</span>
+                        <div class="p-4">
+                            <textarea id="codeEditor" placeholder="コードを入力してください..."></textarea>
                         </div>
                     </div>
-                    <div id="editor" style="height: 500px;"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 共有モーダル -->
-    <div id="shareModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 class="text-lg font-semibold mb-4">
-                <i class="fas fa-share mr-2"></i>ファイルを共有
-            </h3>
-            <p class="text-gray-600 mb-4">このURLをコピーして共有してください：</p>
-            <div class="flex">
-                <input type="text" id="shareUrl" class="flex-1 p-2 border border-gray-300 rounded-l" readonly>
-                <button id="copyUrlBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-r transition duration-200">
-                    <i class="fas fa-copy"></i>
-                </button>
+    <!-- 初期設定画面 -->
+    <div id="initialSetup" class="max-w-2xl mx-auto py-16 px-4">
+        <div class="bg-white rounded-lg shadow-lg p-8">
+            <div class="text-center mb-8">
+                <i class="fab fa-github text-6xl text-gray-800 mb-4"></i>
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">GitHub連携の設定</h2>
+                <p class="text-gray-600">GitHub APIを使用してクラウド上でファイルを管理します</p>
             </div>
-            <div class="flex justify-end mt-4">
-                <button id="closeShareModal" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded transition duration-200">
-                    閉じる
-                </button>
+
+            <div class="space-y-6">
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h3 class="font-semibold text-blue-900 mb-2">設定手順</h3>
+                    <ol class="text-sm text-blue-800 space-y-1">
+                        <li>1. <a href="https://github.com/settings/tokens/new" target="_blank" class="underline">GitHub Personal Access Token</a> を作成</li>
+                        <li>2. 必要な権限: <code>repo</code> (プライベートリポジトリの場合) または <code>public_repo</code></li>
+                        <li>3. 下記フォームに情報を入力</li>
+                        <li>4. 「接続テスト」で確認後、「保存」をクリック</li>
+                    </ol>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Personal Access Token *</label>
+                        <input type="password" id="initialTokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" 
+                               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">リポジトリ名 *</label>
+                        <input type="text" id="initialRepoInput" placeholder="my-code-memo" 
+                               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <p class="text-sm text-gray-500 mt-1">存在しないリポジトリの場合、自動で作成されます</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">ブランチ</label>
+                        <input type="text" id="initialBranchInput" value="main" 
+                               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                </div>
+
+                <div class="flex space-x-4">
+                    <button id="initialTestBtn" class="flex-1 bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">
+                        <i class="fas fa-plug mr-2"></i>接続テスト
+                    </button>
+                    <button id="initialSaveBtn" class="flex-1 bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors">
+                        <i class="fas fa-save mr-2"></i>保存して開始
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        class CodeMemoApp {
+        class GitHubCodeMemo {
             constructor() {
-                this.editor = null;
+                this.config = this.loadConfig();
                 this.currentFile = null;
-                this.files = this.loadFiles();
-                this.init();
+                this.files = [];
+                this.editor = null;
+                this.initializeEditor();
+                this.initializeUI();
+                this.checkInitialSetup();
             }
 
-            init() {
-                this.initEditor();
-                this.bindEvents();
-                this.updateFileList();
-                this.loadSharedFile();
+            loadConfig() {
+                const saved = localStorage.getItem('githubCodeMemoConfig');
+                return saved ? JSON.parse(saved) : null;
             }
 
-            initEditor() {
-                this.editor = CodeMirror(document.getElementById('editor'), {
+            saveConfig(config) {
+                localStorage.setItem('githubCodeMemoConfig', JSON.stringify(config));
+                this.config = config;
+            }
+
+            initializeEditor() {
+                this.editor = CodeMirror.fromTextArea(document.getElementById('codeEditor'), {
                     lineNumbers: true,
-                    mode: 'javascript',
                     theme: 'default',
-                    styleActiveLine: true,
+                    mode: 'javascript',
                     autoCloseBrackets: true,
                     matchBrackets: true,
-                    foldGutter: true,
-                    gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
-                    lineWrapping: true,
-                    value: '// Welcome to CodeMemo!\n// Start coding here...\n\nconsole.log("Hello, CodeMemo!");'
+                    styleActiveLine: true,
+                    indentUnit: 4,
+                    lineWrapping: true
                 });
 
                 this.editor.on('change', () => {
-                    this.updateStats();
+                    if (this.currentFile) {
+                        this.currentFile.modified = true;
+                        this.updateFileList();
+                    }
                 });
-
-                this.updateStats();
             }
 
-            bindEvents() {
-                // ボタンイベント
-                document.getElementById('newFileBtn').addEventListener('click', () => this.newFile());
-                document.getElementById('saveBtn').addEventListener('click', () => this.saveFile());
-                document.getElementById('shareBtn').addEventListener('click', () => this.shareFile());
-                document.getElementById('exportBtn').addEventListener('click', () => this.exportFiles());
-                document.getElementById('importFile').addEventListener('change', (e) => this.importFiles(e));
+            initializeUI() {
+                // 設定関連
+                document.getElementById('configBtn').addEventListener('click', () => {
+                    this.toggleConfigPanel();
+                });
 
-                // セレクトボックス
+                document.getElementById('saveConfigBtn').addEventListener('click', () => {
+                    this.saveConfiguration();
+                });
+
+                document.getElementById('testConnectionBtn').addEventListener('click', () => {
+                    this.testConnection();
+                });
+
+                document.getElementById('initialTestBtn').addEventListener('click', () => {
+                    this.testInitialConnection();
+                });
+
+                document.getElementById('initialSaveBtn').addEventListener('click', () => {
+                    this.saveInitialConfiguration();
+                });
+
+                // ファイル操作
+                document.getElementById('newFileBtn').addEventListener('click', () => {
+                    this.createNewFile();
+                });
+
+                document.getElementById('refreshBtn').addEventListener('click', () => {
+                    this.loadFiles();
+                });
+
+                document.getElementById('saveBtn').addEventListener('click', () => {
+                    this.saveCurrentFile();
+                });
+
+                document.getElementById('deleteBtn').addEventListener('click', () => {
+                    this.deleteCurrentFile();
+                });
+
+                // エディタ関連
                 document.getElementById('languageSelect').addEventListener('change', (e) => {
-                    this.editor.setOption('mode', e.target.value);
+                    this.setEditorMode(e.target.value);
                 });
 
-                document.getElementById('themeSelect').addEventListener('change', (e) => {
-                    this.editor.setOption('theme', e.target.value);
-                });
-
-                // モーダル
-                document.getElementById('closeShareModal').addEventListener('click', () => {
-                    document.getElementById('shareModal').classList.add('hidden');
-                });
-
-                document.getElementById('copyUrlBtn').addEventListener('click', () => {
-                    const urlInput = document.getElementById('shareUrl');
-                    urlInput.select();
-                    document.execCommand('copy');
-                    this.showNotification('URLをコピーしました！');
-                });
-
-                // ショートカットキー
-                document.addEventListener('keydown', (e) => {
-                    if (e.ctrlKey || e.metaKey) {
-                        if (e.key === 's') {
-                            e.preventDefault();
-                            this.saveFile();
-                        } else if (e.key === 'n') {
-                            e.preventDefault();
-                            this.newFile();
-                        }
+                document.getElementById('fileNameInput').addEventListener('change', (e) => {
+                    if (this.currentFile) {
+                        this.currentFile.name = e.target.value;
+                        this.updateFileList();
                     }
                 });
             }
 
-            newFile() {
-                this.currentFile = null;
-                this.editor.setValue('');
-                document.getElementById('fileName').value = '';
-                document.getElementById('currentFileName').textContent = '新しいファイル';
-                document.getElementById('languageSelect').value = 'javascript';
-                this.editor.setOption('mode', 'javascript');
-            }
-
-            saveFile() {
-                const fileName = document.getElementById('fileName').value.trim();
-                if (!fileName) {
-                    this.showNotification('ファイル名を入力してください', 'error');
-                    return;
-                }
-
-                const language = document.getElementById('languageSelect').value;
-                const content = this.editor.getValue();
-
-                const file = {
-                    id: this.currentFile ? this.currentFile.id : Date.now().toString(),
-                    name: fileName,
-                    language: language,
-                    content: content,
-                    lastModified: new Date().toISOString()
-                };
-
-                if (this.currentFile) {
-                    const index = this.files.findIndex(f => f.id === this.currentFile.id);
-                    this.files[index] = file;
+            checkInitialSetup() {
+                if (!this.config) {
+                    document.getElementById('initialSetup').classList.remove('hidden');
+                    document.getElementById('editorArea').classList.add('hidden');
                 } else {
-                    this.files.push(file);
+                    document.getElementById('initialSetup').classList.add('hidden');
+                    document.getElementById('editorArea').classList.remove('hidden');
+                    this.loadUserInfo();
+                    this.loadFiles();
                 }
-
-                this.currentFile = file;
-                this.saveFiles();
-                this.updateFileList();
-                document.getElementById('currentFileName').textContent = fileName;
-                this.showNotification('ファイルを保存しました！');
             }
 
-            loadFile(file) {
-                this.currentFile = file;
-                this.editor.setValue(file.content);
-                document.getElementById('fileName').value = file.name;
-                document.getElementById('languageSelect').value = file.language;
-                document.getElementById('currentFileName').textContent = file.name;
-                this.editor.setOption('mode', file.language);
-            }
+            async loadUserInfo() {
+                try {
+                    const response = await fetch('https://api.github.com/user', {
+                        headers: {
+                            'Authorization': `token ${this.config.token}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    });
 
-            deleteFile(fileId) {
-                if (confirm('ファイルを削除しますか？')) {
-                    this.files = this.files.filter(f => f.id !== fileId);
-                    this.saveFiles();
-                    this.updateFileList();
-                    
-                    if (this.currentFile && this.currentFile.id === fileId) {
-                        this.newFile();
+                    if (response.ok) {
+                        const user = await response.json();
+                        document.getElementById('username').textContent = user.login;
+                        document.getElementById('userInfo').classList.remove('hidden');
                     }
-                    this.showNotification('ファイルを削除しました');
+                } catch (error) {
+                    console.error('Failed to load user info:', error);
                 }
             }
 
-            shareFile() {
-                if (!this.currentFile) {
-                    this.showNotification('共有するファイルがありません', 'error');
+            toggleConfigPanel() {
+                const panel = document.getElementById('configPanel');
+                if (panel.classList.contains('hidden')) {
+                    panel.classList.remove('hidden');
+                    if (this.config) {
+                        document.getElementById('tokenInput').value = this.config.token;
+                        document.getElementById('repoInput').value = this.config.repo;
+                        document.getElementById('branchInput').value = this.config.branch;
+                    }
+                } else {
+                    panel.classList.add('hidden');
+                }
+            }
+
+            async testConnection() {
+                const token = document.getElementById('tokenInput').value;
+                const repo = document.getElementById('repoInput').value;
+
+                if (!token || !repo) {
+                    this.showNotification('トークンとリポジトリ名を入力してください', 'error');
                     return;
                 }
 
-                const shareData = {
-                    name: this.currentFile.name,
-                    language: this.currentFile.language,
-                    content: this.currentFile.content
-                };
+                try {
+                    const response = await fetch(`https://api.github.com/repos/${await this.getUsername(token)}/${repo}`, {
+                        headers: {
+                            'Authorization': `token ${token}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    });
 
-                const encoded = btoa(JSON.stringify(shareData));
-                const shareUrl = `${window.location.origin}${window.location.pathname}?share=${encoded}`;
-                
-                document.getElementById('shareUrl').value = shareUrl;
-                document.getElementById('shareModal').classList.remove('hidden');
-            }
-
-            loadSharedFile() {
-                const urlParams = new URLSearchParams(window.location.search);
-                const sharedData = urlParams.get('share');
-                
-                if (sharedData) {
-                    try {
-                        const decoded = JSON.parse(atob(sharedData));
-                        this.editor.setValue(decoded.content);
-                        document.getElementById('fileName').value = decoded.name + '_shared';
-                        document.getElementById('languageSelect').value = decoded.language;
-                        document.getElementById('currentFileName').textContent = decoded.name + ' (共有)';
-                        this.editor.setOption('mode', decoded.language);
-                        this.showNotification('共有ファイルを読み込みました');
-                    } catch (e) {
-                        console.error('Failed to load shared file:', e);
+                    if (response.ok) {
+                        this.showNotification('接続成功しました！', 'success');
+                    } else if (response.status === 404) {
+                        this.showNotification('リポジトリが見つかりません。保存時に作成されます。', 'info');
+                    } else {
+                        this.showNotification('接続に失敗しました', 'error');
                     }
+                } catch (error) {
+                    this.showNotification('接続エラーが発生しました', 'error');
                 }
             }
 
-            exportFiles() {
-                const exportData = {
-                    files: this.files,
-                    exportDate: new Date().toISOString(),
-                    version: "1.0"
-                };
+            async testInitialConnection() {
+                const token = document.getElementById('initialTokenInput').value;
+                const repo = document.getElementById('initialRepoInput').value;
 
-                const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-                    type: 'application/json'
-                });
+                if (!token || !repo) {
+                    this.showNotification('必要な情報を入力してください', 'error');
+                    return;
+                }
 
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `codememo_export_${new Date().toISOString().split('T')[0]}.json`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
+                try {
+                    const username = await this.getUsername(token);
+                    const response = await fetch(`https://api.github.com/repos/${username}/${repo}`, {
+                        headers: {
+                            'Authorization': `token ${token}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    });
 
-                this.showNotification('ファイルをエクスポートしました');
+                    if (response.ok) {
+                        this.showNotification('接続成功しました！', 'success');
+                    } else if (response.status === 404) {
+                        this.showNotification('リポジトリが見つかりません。保存時に作成されます。', 'info');
+                    } else {
+                        this.showNotification('接続に失敗しました', 'error');
+                    }
+                } catch (error) {
+                    this.showNotification('接続エラーが発生しました', 'error');
+                }
             }
 
-            importFiles(event) {
-                const file = event.target.files[0];
-                if (!file) return;
-
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const importData = JSON.parse(e.target.result);
-                        if (importData.files && Array.isArray(importData.files)) {
-                            // IDの重複を避けるため、新しいIDを生成
-                            const newFiles = importData.files.map(f => ({
-                                ...f,
-                                id: Date.now().toString() + Math.random().toString(36).substr(2, 9)
-                            }));
-                            
-                            this.files = [...this.files, ...newFiles];
-                            this.saveFiles();
-                            this.updateFileList();
-                            this.showNotification(`${newFiles.length}個のファイルをインポートしました`);
-                        } else {
-                            throw new Error('Invalid file format');
-                        }
-                    } catch (e) {
-                        this.showNotification('ファイルの読み込みに失敗しました', 'error');
+            async getUsername(token) {
+                const response = await fetch('https://api.github.com/user', {
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Accept': 'application/vnd.github.v3+json'
                     }
+                });
+
+                if (response.ok) {
+                    const user = await response.json();
+                    return user.login;
+                } else {
+                    throw new Error('Failed to get username');
+                }
+            }
+
+            saveConfiguration() {
+                const config = {
+                    token: document.getElementById('tokenInput').value,
+                    repo: document.getElementById('repoInput').value,
+                    branch: document.getElementById('branchInput').value || 'main'
                 };
-                reader.readAsText(file);
-                event.target.value = '';
+
+                if (!config.token || !config.repo) {
+                    this.showNotification('トークンとリポジトリ名は必須です', 'error');
+                    return;
+                }
+
+                this.saveConfig(config);
+                this.showNotification('設定を保存しました', 'success');
+                this.toggleConfigPanel();
+                this.loadUserInfo();
+                this.loadFiles();
+            }
+
+            saveInitialConfiguration() {
+                const config = {
+                    token: document.getElementById('initialTokenInput').value,
+                    repo: document.getElementById('initialRepoInput').value,
+                    branch: document.getElementById('initialBranchInput').value || 'main'
+                };
+
+                if (!config.token || !config.repo) {
+                    this.showNotification('必要な情報を入力してください', 'error');
+                    return;
+                }
+
+                this.saveConfig(config);
+                this.showNotification('設定を保存しました', 'success');
+                document.getElementById('initialSetup').classList.add('hidden');
+                document.getElementById('editorArea').classList.remove('hidden');
+                this.loadUserInfo();
+                this.loadFiles();
+            }
+
+            async loadFiles() {
+                if (!this.config) return;
+
+                this.showSyncIndicator();
+                try {
+                    const username = await this.getUsername(this.config.token);
+                    const response = await fetch(`https://api.github.com/repos/${username}/${this.config.repo}/contents?ref=${this.config.branch}`, {
+                        headers: {
+                            'Authorization': `token ${this.config.token}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        const contents = await response.json();
+                        this.files = contents.filter(item => item.type === 'file').map(file => ({
+                            name: file.name,
+                            path: file.path,
+                            sha: file.sha,
+                            content: '',
+                            modified: false
+                        }));
+                    } else if (response.status === 404) {
+                        this.files = [];
+                    } else {
+                        throw new Error('Failed to load files');
+                    }
+
+                    this.updateFileList();
+                } catch (error) {
+                    console.error('Error loading files:', error);
+                    this.showNotification('ファイル読み込みエラー', 'error');
+                } finally {
+                    this.hideSyncIndicator();
+                }
             }
 
             updateFileList() {
                 const fileList = document.getElementById('fileList');
                 fileList.innerHTML = '';
 
-                if (this.files.length === 0) {
-                    fileList.innerHTML = '<p class="text-gray-500 text-sm">保存されたファイルはありません</p>';
-                    return;
-                }
-
                 this.files.forEach(file => {
                     const fileItem = document.createElement('div');
-                    fileItem.className = 'flex items-center justify-between p-2 bg-gray-50 rounded hover:bg-gray-100 transition duration-200';
-                    
+                    fileItem.className = `file-item p-3 cursor-pointer border-b border-gray-200 ${file === this.currentFile ? 'active' : ''}`;
                     fileItem.innerHTML = `
-                        <div class="flex-1 cursor-pointer" onclick="app.loadFile(${JSON.stringify(file).replace(/"/g, '&quot;')})">
-                            <div class="font-medium text-sm text-gray-800">${file.name}</div>
-                            <div class="text-xs text-gray-500">${file.language} • ${new Date(file.lastModified).toLocaleDateString()}</div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-medium ${file.modified ? 'text-orange-600' : 'text-gray-900'}">
+                                ${file.name}
+                                ${file.modified ? ' <i class="fas fa-circle text-xs text-orange-500"></i>' : ''}
+                            </span>
+                            <i class="fas fa-file-code text-gray-400"></i>
                         </div>
-                        <button onclick="app.deleteFile('${file.id}')" class="text-red-500 hover:text-red-700 ml-2">
-                            <i class="fas fa-trash text-sm"></i>
-                        </button>
                     `;
-                    
+
+                    fileItem.addEventListener('click', () => {
+                        this.openFile(file);
+                    });
+
                     fileList.appendChild(fileItem);
                 });
+
+                if (this.files.length === 0) {
+                    fileList.innerHTML = '<div class="p-4 text-center text-gray-500">ファイルがありません</div>';
+                }
             }
 
-            updateStats() {
-                const content = this.editor.getValue();
-                const lines = content.split('\n').length;
-                const chars = content.length;
+            async openFile(file) {
+                if (!file.content) {
+                    await this.loadFileContent(file);
+                }
+
+                this.currentFile = file;
+                document.getElementById('fileNameInput').value = file.name;
+                this.editor.setValue(file.content);
+                this.setEditorModeFromFileName(file.name);
+                this.updateFileList();
+            }
+
+            async loadFileContent(file) {
+                try {
+                    const username = await this.getUsername(this.config.token);
+                    const response = await fetch(`https://api.github.com/repos/${username}/${this.config.repo}/contents/${file.path}?ref=${this.config.branch}`, {
+                        headers: {
+                            'Authorization': `token ${this.config.token}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        const content = await response.json();
+                        file.content = atob(content.content);
+                        file.sha = content.sha;
+                    }
+                } catch (error) {
+                    console.error('Error loading file content:', error);
+                    this.showNotification('ファイル内容の読み込みエラー', 'error');
+                }
+            }
+
+            createNewFile() {
+                const fileName = prompt('ファイル名を入力してください:', 'newfile.js');
+                if (!fileName) return;
+
+                const newFile = {
+                    name: fileName,
+                    path: fileName,
+                    content: '',
+                    modified: true,
+                    sha: null
+                };
+
+                this.files.push(newFile);
+                this.updateFileList();
+                this.openFile(newFile);
+            }
+
+            async saveCurrentFile() {
+                if (!this.currentFile) return;
+
+                this.showSyncIndicator();
+                try {
+                    const username = await this.getUsername(this.config.token);
+                    const content = this.editor.getValue();
+                    const message = `Update ${this.currentFile.name}`;
+
+                    const requestBody = {
+                        message: message,
+                        content: btoa(unescape(encodeURIComponent(content))),
+                        branch: this.config.branch
+                    };
+
+                    if (this.currentFile.sha) {
+                        requestBody.sha = this.currentFile.sha;
+                    }
+
+                    const response = await fetch(`https://api.github.com/repos/${username}/${this.config.repo}/contents/${this.currentFile.path}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `token ${this.config.token}`,
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(requestBody)
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        this.currentFile.sha = result.content.sha;
+                        this.currentFile.content = content;
+                        this.currentFile.modified = false;
+                        this.updateFileList();
+                        this.showNotification('ファイルを保存しました', 'success');
+                    } else if (response.status === 404) {
+                        // リポジトリが存在しない場合、作成を試みる
+                        await this.createRepository(username);
+                        // リポジトリ作成後、再度保存を試みる
+                        await this.saveCurrentFile();
+                    } else {
+                        throw new Error('Failed to save file');
+                    }
+                } catch (error) {
+                    console.error('Error saving file:', error);
+                    this.showNotification('ファイル保存エラー', 'error');
+                } finally {
+                    this.hideSyncIndicator();
+                }
+            }
+
+            async createRepository(username) {
+                try {
+                    const response = await fetch('https://api.github.com/user/repos', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `token ${this.config.token}`,
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            name: this.config.repo,
+                            description: 'Code memo repository created by CodeMemo GitHub Edition',
+                            private: false,
+                            auto_init: true
+                        })
+                    });
+
+                    if (response.ok) {
+                        this.showNotification('リポジトリを作成しました', 'success');
+                    } else {
+                        throw new Error('Failed to create repository');
+                    }
+                } catch (error) {
+                    console.error('Error creating repository:', error);
+                    this.showNotification('リポジトリ作成エラー', 'error');
+                }
+            }
+
+            async deleteCurrentFile() {
+                if (!this.currentFile || !this.currentFile.sha) return;
+
+                if (!confirm(`ファイル「${this.currentFile.name}」を削除しますか？`)) return;
+
+                this.showSyncIndicator();
+                try {
+                    const username = await this.getUsername(this.config.token);
+                    const response = await fetch(`https://api.github.com/repos/${username}/${this.config.repo}/contents/${this.currentFile.path}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `token ${this.config.token}`,
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            message: `Delete ${this.currentFile.name}`,
+                            sha: this.currentFile.sha,
+                            branch: this.config.branch
+                        })
+                    });
+
+                    if (response.ok) {
+                        this.files = this.files.filter(f => f !== this.currentFile);
+                        this.currentFile = null;
+                        this.editor.setValue('');
+                        document.getElementById('fileNameInput').value = '';
+                        this.updateFileList();
+                        this.showNotification('ファイルを削除しました', 'success');
+                    } else {
+                        throw new Error('Failed to delete file');
+                    }
+                } catch (error) {
+                    console.error('Error deleting file:', error);
+                    this.showNotification('ファイル削除エラー', 'error');
+                } finally {
+                    this.hideSyncIndicator();
+                }
+            }
+
+            setEditorMode(mode) {
+                this.editor.setOption('mode', mode);
+            }
+
+            setEditorModeFromFileName(fileName) {
+                const ext = fileName.split('.').pop().toLowerCase();
+                const modeMap = {
+                    'js': 'javascript',
+                    'py': 'python',
+                    'html': 'html',
+                    'css': 'css',
+                    'xml': 'xml',
+                    'java': 'clike',
+                    'c': 'clike',
+                    'cpp': 'clike',
+                    'php': 'php',
+                    'rb': 'ruby',
+                    'sql': 'sql',
+                    'yaml': 'yaml',
+                    'yml': 'yaml',
+                    'md': 'markdown'
+                };
+
+                const mode = modeMap[ext] || 'text';
+                this.setEditorMode(mode);
+                document.getElementById('languageSelect').value = mode;
+            }
+
+            showSyncIndicator() {
+                document.getElementById('syncIndicator').classList.remove('hidden');
+            }
+
+            hideSyncIndicator() {
+                document.getElementById('syncIndicator').classList.add('hidden');
+            }
+
+            showNotification(message, type = 'info') {
+                const notification = document.getElementById('notification');
+                const notificationText = document.getElementById('notificationText');
                 
-                document.getElementById('lineCount').textContent = lines;
-                document.getElementById('charCount').textContent = chars;
-            }
-
-            saveFiles() {
-                localStorage.setItem('codeMemoFiles', JSON.stringify(this.files));
-            }
-
-            loadFiles() {
-                const saved = localStorage.getItem('codeMemoFiles');
-                return saved ? JSON.parse(saved) : [];
-            }
-
-            showNotification(message, type = 'success') {
-                const notification = document.createElement('div');
-                notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white z-50 transition-opacity duration-300 ${
-                    type === 'error' ? 'bg-red-500' : 'bg-green-500'
-                }`;
-                notification.textContent = message;
+                notificationText.textContent = message;
                 
-                document.body.appendChild(notification);
-                
+                const colors = {
+                    success: 'bg-green-500',
+                    error: 'bg-red-500',
+                    info: 'bg-blue-500'
+                };
+
+                notification.className = `notification ${colors[type] || colors.info} text-white px-4 py-2 rounded-lg shadow-lg`;
+                notification.classList.remove('hidden');
+
                 setTimeout(() => {
-                    notification.style.opacity = '0';
-                    setTimeout(() => {
-                        document.body.removeChild(notification);
-                    }, 300);
+                    notification.classList.add('hidden');
                 }, 3000);
             }
         }
 
         // アプリケーション初期化
-        const app = new CodeMemoApp();
+        document.addEventListener('DOMContentLoaded', () => {
+            new GitHubCodeMemo();
+        });
     </script>
 </body>
 </html>
